@@ -1,0 +1,31 @@
+{
+  "task_type": "binary_classification",
+  "target_column": "churn",
+  "features": {
+    "age": {
+      "type": "numeric",
+      "fallback_value": 45.0
+    },
+    "monthly_spend": {
+      "type": "numeric",
+      "fallback_value": 269.3949819271677
+    },
+    "tenure_months": {
+      "type": "numeric",
+      "fallback_value": 30.0
+    },
+    "contract_type": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "payment_method": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    }
+  },
+  "fallback_rules": {
+    "numeric": "median imputation with missing indicator",
+    "categorical": "explicit __MISSING__ token mapped to index 0",
+    "datetime": "cyclical decomposition (month, dow, hour) with NaT defaults"
+  }
+}

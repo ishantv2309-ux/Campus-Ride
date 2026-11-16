@@ -1,0 +1,19 @@
+{
+  "task_type": "binary_classification",
+  "target_column": "target",
+  "features": {
+    "feature1": {
+      "type": "numeric",
+      "fallback_value": 0.0
+    },
+    "feature2": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    }
+  },
+  "fallback_rules": {
+    "numeric": "median imputation with missing indicator",
+    "categorical": "explicit __MISSING__ token mapped to index 0",
+    "datetime": "cyclical decomposition (month, dow, hour) with NaT defaults"
+  }
+}

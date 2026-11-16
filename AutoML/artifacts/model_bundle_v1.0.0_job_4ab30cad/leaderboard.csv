@@ -1,0 +1,7 @@
+model,cv_mean_score,cv_std_score,folds,holdout_accuracy,holdout_f1,holdout_roc_auc
+TabularNN,0.5,0.1479,10,0.55,0.4,0.4192
+LightGBM,0.45,0.1275,10,0.55,0.0,0.702
+XGBoost,0.45,0.1275,10,0.55,0.0,0.702
+CatBoost,0.45,0.1275,10,0.55,0.0,0.702
+ExtraTrees,0.45,0.1275,10,0.55,0.0,0.702
+RandomForest,0.4125,0.1375,10,0.65,0.5882,0.702

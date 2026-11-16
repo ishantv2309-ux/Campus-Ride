@@ -1,0 +1,125 @@
+{
+  "dataset_fingerprint": {
+    "sha256": "e992accd02878e4f2a9d2d28d0ad83f4ef308c9ed2649abba5c3f4cb002b322a",
+    "row_count": 500,
+    "column_count": 10,
+    "missing_value_ratios": {
+      "customer_id": 0.0,
+      "session_uuid": 0.0,
+      "signup_date": 0.0,
+      "age": 0.1,
+      "monthly_spend": 0.0,
+      "tenure_months": 0.0,
+      "sparse_notes": 0.898,
+      "contract_type": 0.0,
+      "payment_method": 0.244,
+      "churn": 0.0
+    },
+    "detected_task_type": "binary_classification"
+  },
+  "transformation_log": {
+    "dropped_columns": [
+      "sparse_notes"
+    ],
+    "imputation_values": {
+      "age": 45.0,
+      "monthly_spend": 269.3949819271677,
+      "tenure_months": 30.0
+    },
+    "encoding_mappings": {
+      "contract_type": {
+        "__MISSING__": 0,
+        "month-to-month": 1,
+        "one-year": 2,
+        "two-year": 3
+      },
+      "payment_method": {
+        "__MISSING__": 0,
+        "bank_transfer": 1,
+        "credit_card": 2,
+        "electronic_check": 3
+      }
+    },
+    "categorical_fallbacks": {
+      "contract_type": 0,
+      "payment_method": 0
+    },
+    "class_imbalance_detected": false,
+    "class_weights": null,
+    "train_indices_count": 400,
+    "test_indices_count": 100,
+    "final_feature_count": 8,
+    "final_feature_names": [
+      "age_is_missing",
+      "age",
+      "monthly_spend_is_missing",
+      "monthly_spend",
+      "tenure_months_is_missing",
+      "tenure_months",
+      "contract_type",
+      "payment_method"
+    ]
+  },
+  "validation_metrics": {
+    "accuracy": 0.87,
+    "f1": 0.8712871287128713,
+    "precision": 0.8627450980392157,
+    "recall": 0.88,
+    "roc_auc": 0.948,
+    "log_loss": 0.298226986979035,
+    "confusion_matrix": [
+      [
+        43,
+        7
+      ],
+      [
+        6,
+        44
+      ]
+    ]
+  },
+  "feature_importance_ranking": {
+    "tenure_months": 0.262,
+    "monthly_spend": 0.116,
+    "contract_type": 0.09,
+    "age": 0.054,
+    "monthly_spend_is_missing": 0.0,
+    "tenure_months_is_missing": 0.0,
+    "age_is_missing": -0.002,
+    "payment_method": -0.002
+  },
+  "guardrail_reports": [
+    {
+      "gate": "Gate 3 - Autonomous Traceback Recovery",
+      "passed": true,
+      "recovery_attempts": 0,
+      "diagnostic": "Stage 2 & 3 executed cleanly with 0 recovery retries."
+    },
+    {
+      "gate": "Gate 1 - Naive Baseline Verification",
+      "passed": true,
+      "metric_evaluated": "accuracy",
+      "ensemble_score": 0.87,
+      "baseline_score": 0.5,
+      "margin": 0.37,
+      "diagnostic": "Ensemble successfully outperformed naive baseline."
+    },
+    {
+      "gate": "Gate 2 - Overfitting & Leakage Audit",
+      "passed": true,
+      "val_score": 0.8975,
+      "holdout_score": 0.87,
+      "divergence": 0.0275,
+      "suspected_leakage": false,
+      "leaking_feature": null,
+      "diagnostic": "Validation and holdout generalization within expected tolerances."
+    },
+    {
+      "gate": "Gate 4 - Inference Sanity Checks",
+      "passed": true,
+      "synthetic_rows_evaluated": 100,
+      "nan_predictions": 0,
+      "diagnostic": "Successfully tested 100 synthetic edge-case rows (all-null, outliers, unseen categories). Predictions are 100% valid and non-NaN."
+    }
+  ]
+}

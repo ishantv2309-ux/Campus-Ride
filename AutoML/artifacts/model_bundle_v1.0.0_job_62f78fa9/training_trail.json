@@ -1,0 +1,116 @@
+{
+  "dataset_fingerprint": {
+    "sha256": "24a7e8e692d2744b8feb41a4516e0819ee0cbcffdd6dc45b100078ec102b3835",
+    "row_count": 100,
+    "column_count": 3,
+    "missing_value_ratios": {
+      "feature1": 0.0,
+      "feature2": 0.0,
+      "target": 0.0
+    },
+    "detected_task_type": "binary_classification"
+  },
+  "transformation_log": {
+    "dropped_columns": [],
+    "imputation_values": {},
+    "encoding_mappings": {
+      "feature2": {
+        "__MISSING__": 0,
+        "A": 1,
+        "B": 2,
+        "C": 3
+      }
+    },
+    "categorical_fallbacks": {
+      "feature2": 0
+    },
+    "class_imbalance_detected": false,
+    "class_weights": null,
+    "train_indices_count": 80,
+    "test_indices_count": 20,
+    "final_feature_count": 1,
+    "final_feature_names": [
+      "feature2"
+    ]
+  },
+  "validation_metrics": {
+    "accuracy": 0.55,
+    "f1": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "roc_auc": 0.702020202020202,
+    "log_loss": 0.666559018512702,
+    "confusion_matrix": [
+      [
+        11,
+        0
+      ],
+      [
+        9,
+        0
+      ]
+    ]
+  },
+  "feature_importance_ranking": {
+    "feature2": 0.0
+  },
+  "guardrail_reports": [
+    {
+      "gate": "Gate 3 - Autonomous Traceback Recovery",
+      "passed": true,
+      "recovery_attempts": 0,
+      "diagnostic": "Stage 2 & 3 executed cleanly with 0 recovery retries."
+    },
+    {
+      "gate": "Gate 1 - Naive Baseline Verification",
+      "passed": true,
+      "metric_evaluated": "accuracy",
+      "ensemble_score": 1.0,
+      "baseline_score": 0.55,
+      "margin": 0.44999999999999996,
+      "diagnostic": "Ensemble successfully outperformed naive baseline."
+    },
+    {
+      "gate": "Gate 2 - Overfitting & Leakage Audit",
+      "passed": false,
+      "val_score": 1.0,
+      "holdout_score": 1.0,
+      "divergence": 0.0,
+      "suspected_leakage": true,
+      "leaking_feature": "feature1",
+      "diagnostic": "Suspected target leakage: Near-perfect score (1.0000) dominated by feature 'feature1' (100.0%)."
+    },
+    {
+      "gate": "Gate 3 - Autonomous Traceback Recovery",
+      "passed": true,
+      "recovery_attempts": 0,
+      "diagnostic": "Stage 2 & 3 executed cleanly with 0 recovery retries."
+    },
+    {
+      "gate": "Gate 1 - Naive Baseline Verification",
+      "passed": true,
+      "metric_evaluated": "accuracy",
+      "ensemble_score": 0.55,
+      "baseline_score": 0.55,
+      "margin": 0.0,
+      "diagnostic": "Ensemble successfully outperformed naive baseline."
+    },
+    {
+      "gate": "Gate 2 - Overfitting & Leakage Audit",
+      "passed": true,
+      "val_score": 0.5,
+      "holdout_score": 0.55,
+      "divergence": 0.05,
+      "suspected_leakage": false,
+      "leaking_feature": null,
+      "diagnostic": "Validation and holdout generalization within expected tolerances."
+    },
+    {
+      "gate": "Gate 4 - Inference Sanity Checks",
+      "passed": true,
+      "synthetic_rows_evaluated": 100,
+      "nan_predictions": 0,
+      "diagnostic": "Successfully tested 100 synthetic edge-case rows (all-null, outliers, unseen categories). Predictions are 100% valid and non-NaN."
+    }
+  ]
+}

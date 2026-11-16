@@ -1,0 +1,83 @@
+{
+  "title": "KCC Institute of Technology and Management Route & ETA Feature Contract",
+  "version": "1.0.0",
+  "task_type": "regression",
+  "destination": "KCC Institute of Technology and Management",
+  "features": {
+    "pickup_location": {
+      "type": "string",
+      "required": true,
+      "description": "Starting pickup point for commuter",
+      "allowed_values": [
+        "Noida 62",
+        "Chapraula",
+        "NH-3",
+        "Lal Kuan",
+        "Indirapuram",
+        "Pari Chowk",
+        "Gaur City",
+        "Alpha 1 Metro",
+        "Crossings Republik",
+        "Ghaziabad Old Bus Stand"
+      ],
+      "default": "Noida 62"
+    },
+    "route_name": {
+      "type": "string",
+      "required": true,
+      "description": "Candidate corridor path to KCC Institute"
+    },
+    "distance_km": {
+      "type": "number",
+      "required": true,
+      "min": 1.0,
+      "max": 80.0
+    },
+    "hour_of_day": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "max": 23,
+      "default": 8
+    },
+    "day_of_week": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "max": 6,
+      "default": 0
+    },
+    "bottleneck_penalty_weight": {
+      "type": "number",
+      "required": true,
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Traffic penalty index (e.g. 0.85 for Lal Kuan junction vs 0.10 for Expressway bypass)"
+    },
+    "is_expressway_bypass": {
+      "type": "integer",
+      "required": true,
+      "enum": [0, 1]
+    },
+    "vehicle_type": {
+      "type": "string",
+      "required": true,
+      "allowed_values": ["Car", "Motorcycle", "Scooty", "None / Rider Only"],
+      "default": "Car"
+    }
+  },
+  "outputs": {
+    "predicted_eta_mins": {
+      "type": "number",
+      "description": "Predicted travel duration in minutes"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Prediction confidence percentage (0-100)"
+    },
+    "route_status": {
+      "type": "string",
+      "enum": ["Optimal", "Viable Alternative", "Filtered (High Bottleneck Congestion)"]
+    }
+  }
+}

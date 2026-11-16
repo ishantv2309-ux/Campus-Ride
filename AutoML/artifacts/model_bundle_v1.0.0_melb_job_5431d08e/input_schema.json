@@ -1,0 +1,91 @@
+{
+  "task_type": "regression",
+  "target_column": "Price",
+  "features": {
+    "Suburb": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Address": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Rooms": {
+      "type": "numeric",
+      "fallback_value": 3.0
+    },
+    "Type": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Method": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "SellerG": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Date": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Distance": {
+      "type": "numeric",
+      "fallback_value": 9.2
+    },
+    "Postcode": {
+      "type": "numeric",
+      "fallback_value": 3084.0
+    },
+    "Bedroom2": {
+      "type": "numeric",
+      "fallback_value": 3.0
+    },
+    "Bathroom": {
+      "type": "numeric",
+      "fallback_value": 1.0
+    },
+    "Car": {
+      "type": "numeric",
+      "fallback_value": 2.0
+    },
+    "Landsize": {
+      "type": "numeric",
+      "fallback_value": 435.0
+    },
+    "BuildingArea": {
+      "type": "numeric",
+      "fallback_value": 126.0
+    },
+    "YearBuilt": {
+      "type": "numeric",
+      "fallback_value": 1970.0
+    },
+    "CouncilArea": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Lattitude": {
+      "type": "numeric",
+      "fallback_value": -37.8024
+    },
+    "Longtitude": {
+      "type": "numeric",
+      "fallback_value": 144.999845
+    },
+    "Regionname": {
+      "type": "categorical",
+      "fallback_value": "__MISSING__"
+    },
+    "Propertycount": {
+      "type": "numeric",
+      "fallback_value": 6567.0
+    }
+  },
+  "fallback_rules": {
+    "numeric": "median imputation with missing indicator",
+    "categorical": "explicit __MISSING__ token mapped to index 0",
+    "datetime": "cyclical decomposition (month, dow, hour) with NaT defaults"
+  }
+}

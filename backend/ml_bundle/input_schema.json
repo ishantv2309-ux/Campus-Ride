@@ -1,0 +1,83 @@
+{
+  "title": "CampusRide Route & ETA Feature Contract",
+  "version": "1.0.0",
+  "features": {
+    "origin_zone": {
+      "type": "string",
+      "required": true,
+      "description": "Starting pickup corridor or student residential hub",
+      "allowed_values": [
+        "North Campus Hostel Cluster",
+        "South Extension Ring Road",
+        "Dwarka Sector 10 Hub",
+        "Rohini Sector 14 Metro",
+        "Indirapuram Shipra Mall",
+        "Noida Sector 62 IT Corridor",
+        "Cyber City Phase 2",
+        "Janakpuri West Metro",
+        "Saket Community Center",
+        "Kashmere Gate Interchange",
+        "Karol Bagh Metro Gate 2",
+        "Laxmi Nagar Vikas Marg"
+      ],
+      "default": "North Campus Hostel Cluster"
+    },
+    "destination_gate": {
+      "type": "string",
+      "required": true,
+      "description": "Campus entry gate",
+      "allowed_values": [
+        "Main Campus Gate (Admin Block)",
+        "North Engineering Gate",
+        "South Science & Research Gate",
+        "Hostel Complex Entry Gate"
+      ],
+      "default": "Main Campus Gate (Admin Block)"
+    },
+    "distance_km": {
+      "type": "number",
+      "required": true,
+      "min": 0.5,
+      "max": 60.0,
+      "default": 8.5
+    },
+    "hour_of_day": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "max": 23,
+      "default": 8
+    },
+    "day_of_week": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "max": 6,
+      "description": "0 = Monday, 6 = Sunday",
+      "default": 0
+    },
+    "vehicle_type": {
+      "type": "string",
+      "required": true,
+      "allowed_values": [
+        "two_wheeler",
+        "car"
+      ],
+      "default": "car"
+    }
+  },
+  "outputs": {
+    "predicted_eta_mins": {
+      "type": "number",
+      "description": "Predicted trip duration in minutes"
+    },
+    "route_match_score": {
+      "type": "number",
+      "description": "Route compatibility score (0-100)"
+    },
+    "corridor_congestion_index": {
+      "type": "string",
+      "enum": ["Low", "Moderate", "High", "Peak Rush Hour"]
+    }
+  }
+}
