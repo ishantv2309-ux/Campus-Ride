@@ -33,7 +33,9 @@ import {
   Zap
 } from 'lucide-react';
 
-const API_BASE = window.location.port === '5173' ? '/api' : (window.location.origin.includes('8000') ? '/api' : 'http://localhost:8000/api');
+// Relative API base path allows frontend to dynamically target the active host
+// (e.g., https://campus-ride-f16x.onrender.com/api in production or Vite proxy in dev)
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
 export default function App() {
   // Theme State

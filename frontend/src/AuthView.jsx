@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Moon, AlertCircle, CheckCircle2, Eye, EyeOff, ShieldCheck, ArrowRight, User, Mail, Lock, Car, Tag } from 'lucide-react';
 
-export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:8000/api' }) {
+export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
   // Theme state: 'light' | 'dark'
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('campusride_theme') || 
