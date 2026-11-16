@@ -1024,22 +1024,72 @@ def export_historical_trips(db: Session = Depends(get_db)):
         headers={"Content-Disposition": "attachment; filename=campus_trips_export.csv"}
     )
 
-# ==================== STATIC FRONTEND SERVING ====================
+@app.get("/api/health", tags=["System"])
+def health_check():
+    """System health check endpoint for monitoring & deployment validation."""
+    return {"status": "healthy", "service": "CampusRide API"}
+
+# ==================== STATIC FRONTEND SERVING & SPA ROUTING ====================
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
-if os.path.exists(FRONTEND_DIST):
-    assets_dir = os.path.join(FRONTEND_DIST, "assets")
-    if os.path.exists(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIST = os.path.join(BASE_DIR, "frontend", "dist")
+if not os.path.exists(FRONTEND_DIST):
+    alt_dist = os.path.join(BASE_DIR, "dist")
+    if os.path.exists(alt_dist):
+        FRONTEND_DIST = alt_dist
 
-    @app.get("/{full_path:path}")
-    def serve_spa(full_path: str):
-        if full_path.startswith("api"):
-            raise HTTPException(status_code=404, detail="API route not found")
-        index_file = os.path.join(FRONTEND_DIST, "index.html")
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return {"message": "CampusRide API is running. Build frontend dist to view Web UI."}
+# Mount compiled static assets folder if available
+assets_dir = os.path.join(FRONTEND_DIST, "assets")
+if os.path.exists(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+def _get_index_html():
+    """Locate index.html from available dist folders."""
+    for dist_dir in [FRONTEND_DIST, os.path.join(BASE_DIR, "frontend", "dist"), os.path.join(BASE_DIR, "dist")]:
+        candidate = os.path.join(dist_dir, "index.html")
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+@app.get("/", tags=["Frontend"])
+def serve_root():
+    """Serves the compiled SPA frontend at the root URL."""
+    index_file = _get_index_html()
+    if index_file:
+        return FileResponse(index_file)
+    return {
+        "message": "CampusRide API is running.",
+        "status": "online",
+        "detail": "Frontend UI build not found. Run 'npm --prefix frontend install && npm --prefix frontend run build' to compile static assets."
+    }
+
+@app.get("/{full_path:path}", tags=["Frontend"])
+def serve_spa(full_path: str):
+    """
+    Catch-all route for Single Page Application client-side navigation.
+    Serves matching static files if present, else falls back to index.html.
+    Preserves all /api endpoints, /docs, /redoc, and /openapi.json.
+    """
+    if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path == "openapi.json":
+        raise HTTPException(status_code=404, detail="API route not found")
+
+    # If the request matches a physical static file (e.g., favicon, icons, manifest), serve it
+    for dist_dir in [FRONTEND_DIST, os.path.join(BASE_DIR, "frontend", "dist"), os.path.join(BASE_DIR, "dist")]:
+        target_file = os.path.join(dist_dir, full_path)
+        if os.path.isfile(target_file):
+            return FileResponse(target_file)
+
+    # Otherwise fallback to index.html for client-side HTML5 history routing
+    index_file = _get_index_html()
+    if index_file:
+        return FileResponse(index_file)
+
+    return {
+        "message": "CampusRide API is running.",
+        "status": "online",
+        "detail": f"Path '/{full_path}' requested but frontend UI build not found."
+    }
+
 

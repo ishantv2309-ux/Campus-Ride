@@ -420,10 +420,10 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col font-sans w-full overflow-x-hidden">
       {/* Tactical Toast Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded border flex items-center gap-2.5 text-xs font-mono shadow-lg transition-all ${
+        <div className={`fixed top-3 left-3 right-3 sm:left-auto sm:right-4 z-50 max-w-sm sm:max-w-md px-3.5 sm:px-4 py-2.5 rounded border flex items-center gap-2.5 text-xs font-mono shadow-xl transition-all ${
           notification.type === 'error'
             ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-[#1c1012] dark:text-rose-300 dark:border-rose-800/80'
             : notification.type === 'info'
@@ -431,57 +431,56 @@ export default function App() {
             : 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-[#062016] dark:text-emerald-300 dark:border-emerald-700/80'
         }`}>
           {notification.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" /> : <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />}
-          <span>{notification.msg}</span>
+          <span className="truncate">{notification.msg}</span>
         </div>
       )}
 
       {/* Top Header: Tactical Dispatch Console */}
-      <header className="bg-white dark:bg-[#09090b] border-b border-[#E2E8F0] dark:border-[#27272a] sticky top-0 z-40 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-slate-100 dark:bg-[#121215] text-emerald-500 border border-[#E2E8F0] dark:border-emerald-500/50 flex items-center justify-center font-mono font-bold text-xs rounded">
+      <header className="bg-white dark:bg-[#09090b] border-b border-[#E2E8F0] dark:border-[#27272a] sticky top-0 z-40 transition-colors w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 shrink-0 bg-slate-100 dark:bg-[#121215] text-emerald-500 border border-[#E2E8F0] dark:border-emerald-500/50 flex items-center justify-center font-mono font-bold text-xs rounded">
               CR
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base tracking-tight text-[#0F172A] dark:text-white font-mono">CAMPUS<span className="text-emerald-500">RIDE</span></span>
+                <span className="font-bold text-sm sm:text-base tracking-tight text-[#0F172A] dark:text-white font-mono">CAMPUS<span className="text-emerald-500">RIDE</span></span>
               </div>
-              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block">
-                KCC Institute of Technology & Management • Knowledge Park II, Greater Noida
+              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
+                KCC Institute • Knowledge Park II, Greater Noida
               </span>
             </div>
           </div>
 
           {/* User Status Bar & Controls */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Tactile Theme Toggle */}
             <button
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-700 text-[#0F172A] dark:text-zinc-300 rounded active:scale-[0.98] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 min-h-[38px] text-xs font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-700 text-[#0F172A] dark:text-zinc-300 rounded active:scale-[0.98] transition-all cursor-pointer"
             >
               {theme === 'dark' ? (
                 <>
-                  <Sun key="sun-icon" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon" />
-                  <span className="font-mono">LIGHT</span>
+                  <Sun key="sun-icon" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon shrink-0" />
+                  <span className="font-mono hidden sm:inline">LIGHT</span>
                 </>
               ) : (
                 <>
-                  <Moon key="moon-icon" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon" />
-                  <span className="font-mono">DARK</span>
+                  <Moon key="moon-icon" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon shrink-0" />
+                  <span className="font-mono hidden sm:inline">DARK</span>
                 </>
               )}
             </button>
 
-            {/* Profile Info Badge */}
-            <div className="hidden md:flex items-center gap-2 bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] px-3 py-1 rounded text-xs font-mono">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <div>
-                <span className="font-semibold text-[#0F172A] dark:text-white">{currentUser.full_name}</span>
-                <span className="text-[10px] text-slate-500 dark:text-zinc-400 block font-mono">
-                  {currentUser.college_email} • {currentUser.vehicle_type || 'Rider Only'}
-                  {currentUser.vehicle_brand ? ` (${currentUser.vehicle_brand})` : ''}
+            {/* Profile Info Badge (Gracefully truncates on mobile screens) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] px-2 sm:px-3 py-1 min-h-[38px] rounded text-xs font-mono max-w-[110px] sm:max-w-[180px] md:max-w-[240px]">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <div className="min-w-0 truncate">
+                <span className="font-semibold text-[#0F172A] dark:text-white block truncate leading-tight">{currentUser.full_name}</span>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-zinc-400 block font-mono truncate leading-tight">
+                  {currentUser.college_email}
                 </span>
               </div>
             </div>
@@ -489,59 +488,63 @@ export default function App() {
             <button
               onClick={handleLogout}
               title="Sign Out"
-              className="p-1.5 rounded bg-white dark:bg-[#121215] hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-[#E2E8F0] dark:border-[#27272a] hover:border-rose-400 dark:hover:border-rose-700 text-slate-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300 active:scale-[0.98] transition-all cursor-pointer"
+              aria-label="Sign Out"
+              className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] flex items-center justify-center rounded bg-white dark:bg-[#121215] hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-[#E2E8F0] dark:border-[#27272a] hover:border-rose-400 dark:hover:border-rose-700 text-slate-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300 active:scale-[0.98] transition-all cursor-pointer"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 shrink-0" />
             </button>
           </div>
         </div>
       </header>
 
       {/* Sub-Header & Mode Navigation */}
-      <div className="bg-slate-50 dark:bg-[#09090b] border-b border-[#E2E8F0] dark:border-[#27272a] py-2.5 px-4 sm:px-6 transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
-          {/* Mode Switch Tabs */}
-          <div className="inline-flex bg-white dark:bg-[#121215] p-1 rounded border border-[#E2E8F0] dark:border-[#27272a]">
-            <button
-              onClick={() => setActiveTab('rider')}
-              className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 active:scale-[0.98] cursor-pointer ${
-                activeTab === 'rider'
-                  ? 'bg-slate-200 dark:bg-zinc-800 text-[#0F172A] dark:text-white border border-slate-300 dark:border-zinc-700 shadow-sm font-bold'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Rider Dispatch</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('driver')}
-              className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 active:scale-[0.98] cursor-pointer ${
-                activeTab === 'driver'
-                  ? 'bg-slate-200 dark:bg-zinc-800 text-[#0F172A] dark:text-white border border-slate-300 dark:border-zinc-700 shadow-sm font-bold'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
-              }`}
-            >
-              <Car className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Driver Mode</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('matcher')}
-              className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 active:scale-[0.98] cursor-pointer ${
-                activeTab === 'matcher'
-                  ? 'bg-emerald-500 text-black border border-emerald-400 font-bold'
-                  : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AutoML Route Engine</span>
-            </button>
+      <div className="bg-slate-50 dark:bg-[#09090b] border-b border-[#E2E8F0] dark:border-[#27272a] py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          {/* Mode Switch Tabs - Horizontally scrollable on mobile with hidden scrollbar */}
+          <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
+            <div className="inline-flex bg-white dark:bg-[#121215] p-1 rounded border border-[#E2E8F0] dark:border-[#27272a] whitespace-nowrap">
+              <button
+                onClick={() => setActiveTab('rider')}
+                className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[36px] sm:min-h-0 active:scale-[0.98] cursor-pointer ${
+                  activeTab === 'rider'
+                    ? 'bg-slate-200 dark:bg-zinc-800 text-[#0F172A] dark:text-white border border-slate-300 dark:border-zinc-700 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>Rider Dispatch</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('driver')}
+                className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[36px] sm:min-h-0 active:scale-[0.98] cursor-pointer ${
+                  activeTab === 'driver'
+                    ? 'bg-slate-200 dark:bg-zinc-800 text-[#0F172A] dark:text-white border border-slate-300 dark:border-zinc-700 shadow-sm font-bold'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                }`}
+              >
+                <Car className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>Driver Mode</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('matcher')}
+                className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[36px] sm:min-h-0 active:scale-[0.98] cursor-pointer ${
+                  activeTab === 'matcher'
+                    ? 'bg-emerald-500 text-black border border-emerald-400 font-bold'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span>AutoML Route Engine</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-2">
             <button
               onClick={refreshDashboard}
               title="Refresh Live State"
-              className="p-1.5 rounded bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer"
+              aria-label="Refresh Live State"
+              className="p-2 sm:p-1.5 rounded min-h-[36px] min-w-[36px] flex items-center justify-center bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingFeed ? 'animate-spin text-emerald-500' : ''}`} />
             </button>
@@ -550,10 +553,10 @@ export default function App() {
       </div>
 
       {/* Main Body */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
 
         {/* 1. SAVED ROUTES SECTION */}
-        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-[#3f3f46] rounded p-4 sm:p-5 transition-colors shadow-sm">
+        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-[#3f3f46] rounded p-4 sm:p-5 lg:p-6 transition-colors shadow-sm w-full">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2">
               <Bookmark className="w-4 h-4 text-emerald-500" />
@@ -607,32 +610,32 @@ export default function App() {
 
         {/* 2. MODE CONTENT: RIDER VIEW */}
         {activeTab === 'rider' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Live Ride Feed (2 cols) */}
-            <div className="lg:col-span-2 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+            {/* Live Ride Feed (2 cols on lg, stacked on md/sm) */}
+            <div className="lg:col-span-2 space-y-4 w-full">
               <div className="flex flex-wrap justify-between items-center gap-2">
                 <div>
                   <h2 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] dark:text-white flex items-center gap-2 font-mono">
-                    <Activity className="w-4 h-4 text-emerald-500" /> Available Rides to Campus
+                    <Activity className="w-4 h-4 text-emerald-500 shrink-0" /> Available Rides to Campus
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono">Verified student driver carpools bound for KCC Institute of Technology & Management</p>
                 </div>
-                <span className="text-xs font-mono bg-white dark:bg-[#121215] text-emerald-600 dark:text-emerald-400 border border-[#E2E8F0] dark:border-emerald-500/30 px-2 py-0.5 rounded font-semibold">
+                <span className="text-xs font-mono bg-white dark:bg-[#121215] text-emerald-600 dark:text-emerald-400 border border-[#E2E8F0] dark:border-emerald-500/30 px-2 py-0.5 rounded font-semibold whitespace-nowrap">
                   {filteredRides.length} active
                 </span>
               </div>
 
-              {/* Hub Quick-Filter Bar */}
-              <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-2 rounded flex items-center gap-1.5 overflow-x-auto text-xs font-mono shadow-sm">
+              {/* Hub Quick-Filter Bar - Swipable on mobile with hidden scrollbar */}
+              <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-2 rounded flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar text-xs font-mono shadow-sm">
                 <span className="text-slate-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-                  <Filter className="w-3 h-3 text-emerald-500" /> Pickup Hub:
+                  <Filter className="w-3 h-3 text-emerald-500 shrink-0" /> Pickup Hub:
                 </span>
                 {['All Hubs', 'Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].map((hub) => (
                   <button
                     key={hub}
                     type="button"
                     onClick={() => setSelectedHubFilter(hub)}
-                    className={`px-2.5 py-1 rounded border text-[11px] font-semibold transition-all active:scale-[0.98] cursor-pointer ${
+                    className={`px-3 py-1.5 sm:py-1 rounded border text-[11px] font-semibold transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 min-h-[36px] sm:min-h-0 flex items-center justify-center ${
                       selectedHubFilter === hub
                         ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
                         : 'bg-slate-50 dark:bg-[#09090b] text-slate-600 dark:text-zinc-400 border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 hover:text-[#0F172A] dark:hover:text-white'
@@ -644,7 +647,7 @@ export default function App() {
               </div>
 
               {filteredRides.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-[#121215] rounded border border-[#E2E8F0] dark:border-[#27272a] font-mono shadow-sm">
+                <div className="text-center py-12 bg-white dark:bg-[#121215] rounded border border-[#E2E8F0] dark:border-[#27272a] font-mono shadow-sm p-4">
                   <Car className="w-8 h-8 text-slate-400 dark:text-zinc-600 mx-auto mb-2" />
                   <p className="text-slate-800 dark:text-zinc-300 text-xs font-semibold">No active student rides found for "{selectedHubFilter}".</p>
                   <p className="text-slate-500 dark:text-zinc-500 text-[11px] mt-1">Select "All Hubs" or switch to Driver Mode tab to publish seats.</p>
@@ -658,51 +661,51 @@ export default function App() {
                     return (
                       <div
                         key={ride.id}
-                        className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 rounded p-4 flex flex-col justify-between gap-3.5 transition-colors shadow-sm"
+                        className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 rounded p-4 sm:p-5 lg:p-6 flex flex-col justify-between gap-3.5 transition-colors shadow-sm w-full"
                       >
                         {/* Driver & Status Header */}
-                        <div className="flex items-center justify-between gap-3 border-b border-[#E2E8F0] dark:border-[#27272a] pb-2.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded bg-slate-100 dark:bg-[#1c1c21] border border-slate-300 dark:border-zinc-700 flex items-center justify-center font-bold text-xs text-emerald-600 dark:text-emerald-400 font-mono">
+                        <div className="flex items-center justify-between gap-2.5 border-b border-[#E2E8F0] dark:border-[#27272a] pb-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded bg-slate-100 dark:bg-[#1c1c21] border border-slate-300 dark:border-zinc-700 flex items-center justify-center font-bold text-xs text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
                               {ride.driver.full_name.charAt(0)}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-xs text-[#0F172A] dark:text-white">{ride.driver.full_name}</span>
-                                <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 px-1.5 py-0.2 rounded font-mono uppercase tracking-wider font-semibold">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="font-bold text-xs text-[#0F172A] dark:text-white truncate">{ride.driver.full_name}</span>
+                                <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 px-1.5 py-0.5 rounded font-mono uppercase tracking-wider font-semibold whitespace-nowrap">
                                   Verified @college.edu.in
                                 </span>
                               </div>
-                              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">
+                              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block truncate">
                                 {ride.vehicle_type === 'two_wheeler' ? 'Motorcycle' : 'Car'} • {ride.notes?.split('.')[0] || 'Verified Commuter'}
                               </span>
                             </div>
                           </div>
 
-                          <div className="text-right font-mono">
+                          <div className="text-right font-mono shrink-0">
                             <span className="text-[10px] text-slate-500 dark:text-zinc-500 uppercase tracking-wider block">Available</span>
-                            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                               {ride.seats_available} <span className="text-xs text-slate-500 dark:text-zinc-500 font-normal">/ {ride.seats_total} seats</span>
                             </span>
                           </div>
                         </div>
 
-                        {/* Interactive Corridor Visualizer (Node-and-line Timeline) */}
-                        <div className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded p-2.5 space-y-1.5">
+                        {/* Interactive Corridor Visualizer (Node-and-line Timeline - Responsive wrapping layout) */}
+                        <div className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded p-2.5 sm:p-3 space-y-2">
                           <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-zinc-400">
                             <span className="uppercase tracking-wider flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-semibold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                               Route Stops
                             </span>
                             {isLalKuan && (
-                              <span className="text-amber-700 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider">
+                              <span className="text-amber-700 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider whitespace-nowrap">
                                 ⚡ Fastest Route
                               </span>
                             )}
                           </div>
 
-                          {/* Node & Line Sequence */}
-                          <div className="flex items-center overflow-x-auto py-1 text-[11px] font-mono">
+                          {/* Node & Line Sequence: Wrapping flex layout on narrow screens, horizontal flow on wider */}
+                          <div className="flex flex-wrap items-center gap-y-2 gap-x-1 sm:gap-x-1.5 py-1 text-[11px] font-mono">
                             {waypoints.map((node, idx) => (
                               <React.Fragment key={idx}>
                                 <span className={`px-2 py-0.5 rounded border whitespace-nowrap text-[10px] font-semibold ${
@@ -715,10 +718,10 @@ export default function App() {
                                   {node}
                                 </span>
                                 {idx < waypoints.length - 1 && (
-                                  <div className="flex items-center px-1 text-slate-400 dark:text-zinc-600">
-                                    <span className="h-[1px] w-2.5 bg-slate-300 dark:bg-zinc-700"></span>
+                                  <div className="flex items-center px-0.5 text-slate-400 dark:text-zinc-600 shrink-0">
+                                    <span className="h-[1px] w-1.5 sm:w-2.5 bg-slate-300 dark:bg-zinc-700"></span>
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                    <span className="h-[1px] w-2.5 bg-slate-300 dark:bg-zinc-700"></span>
+                                    <span className="h-[1px] w-1.5 sm:w-2.5 bg-slate-300 dark:bg-zinc-700"></span>
                                   </div>
                                 )}
                               </React.Fragment>
@@ -726,19 +729,19 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Telemetry Metrics Badges & Action */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                          <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-0.5 rounded text-slate-700 dark:text-zinc-300 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400" /> Dep: {ride.departure_time}
+                        {/* Telemetry Metrics Badges & Action Bar */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] font-mono">
+                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-1 sm:py-0.5 rounded text-slate-700 dark:text-zinc-300 flex items-center gap-1 whitespace-nowrap">
+                              <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> Dep: {ride.departure_time}
                             </span>
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-emerald-500/40 px-2 py-0.5 rounded text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
-                              <TrendingUp className="w-3 h-3 text-emerald-500" /> AutoML ETA: {ride.predicted_eta_mins}m
+                            <span className="bg-slate-50 dark:bg-[#09090b] border border-emerald-500/40 px-2 py-1 sm:py-0.5 rounded text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold whitespace-nowrap">
+                              <TrendingUp className="w-3 h-3 text-emerald-500 shrink-0" /> AutoML ETA: {ride.predicted_eta_mins}m
                             </span>
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-0.5 rounded text-slate-700 dark:text-zinc-300 flex items-center gap-1">
-                              <Navigation className="w-3 h-3 text-slate-400 dark:text-zinc-400" /> {ride.distance_km} km
+                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-1 sm:py-0.5 rounded text-slate-700 dark:text-zinc-300 flex items-center gap-1 whitespace-nowrap">
+                              <Navigation className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> {ride.distance_km} km
                             </span>
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-0.5 rounded text-slate-700 dark:text-zinc-300">
+                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-1 sm:py-0.5 rounded text-slate-700 dark:text-zinc-300 whitespace-nowrap">
                               {isLalKuan ? (
                                 <span className="text-amber-600 dark:text-amber-400 font-bold">Traffic: Lal Kuan Bypassed</span>
                               ) : (
@@ -750,7 +753,7 @@ export default function App() {
                           <button
                             onClick={() => handleBookSeat(ride.id)}
                             disabled={ride.seats_available <= 0 || ride.driver.id === currentUser.id}
-                            className="bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold px-3.5 py-1.5 rounded text-xs transition-all border border-emerald-400 disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-zinc-800 disabled:text-slate-400 dark:disabled:text-zinc-500 disabled:border-slate-300 dark:disabled:border-zinc-700 active:scale-[0.98] cursor-pointer"
+                            className="w-full sm:w-auto min-h-[44px] flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold px-4 py-2.5 sm:py-1.5 rounded text-xs transition-all border border-emerald-400 disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-zinc-800 disabled:text-slate-400 dark:disabled:text-zinc-500 disabled:border-slate-300 dark:disabled:border-zinc-700 active:scale-[0.98] cursor-pointer whitespace-nowrap"
                           >
                             {ride.driver.id === currentUser.id ? (
                               'Your Posted Ride'
@@ -768,11 +771,11 @@ export default function App() {
               )}
             </div>
 
-            {/* Sidebar: Confirmed Bookings */}
-            <div className="space-y-4">
-              <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 shadow-sm">
+            {/* Sidebar: Confirmed Bookings (Stacks cleanly below on mobile/tablet) */}
+            <div className="space-y-4 w-full">
+              <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 sm:p-5 lg:p-6 shadow-sm w-full">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white mb-3 flex items-center gap-1.5 font-mono">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Confirmed Bookings
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Confirmed Bookings
                 </h3>
 
                 {myBookings.length === 0 ? (
@@ -780,7 +783,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-2">
                     {myBookings.map((b) => (
-                      <div key={b.booking_id} className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] p-2.5 rounded text-xs font-mono">
+                      <div key={b.booking_id} className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] p-3 rounded text-xs font-mono">
                         <div className="flex justify-between items-center mb-1">
                           <span className="font-semibold text-emerald-600 dark:text-emerald-400">Confirmed</span>
                           <span className="text-[10px] text-slate-500 dark:text-zinc-500">{b.ride.departure_time}</span>
@@ -789,8 +792,8 @@ export default function App() {
                           {b.ride.origin_zone} ➔ {b.ride.destination_gate}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 mt-2 border-t border-[#E2E8F0] dark:border-[#27272a] pt-1.5">
-                          <Phone className="w-3 h-3 text-slate-400 dark:text-zinc-500" />
-                          <span>Driver: {b.ride.driver.full_name} ({b.ride.driver.phone || 'Campus Commuter'})</span>
+                          <Phone className="w-3 h-3 text-slate-400 dark:text-zinc-500 shrink-0" />
+                          <span className="truncate">Driver: {b.ride.driver.full_name} ({b.ride.driver.phone || 'Campus Commuter'})</span>
                         </div>
                       </div>
                     ))}
@@ -803,23 +806,23 @@ export default function App() {
 
         {/* 3. MODE CONTENT: DRIVER VIEW */}
         {activeTab === 'driver' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Post Ride Card (1 col) */}
-            <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-5 space-y-4 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+            {/* Post Ride Card (1 col on lg, stacked on md/sm) */}
+            <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 sm:p-5 lg:p-6 space-y-4 shadow-sm w-full">
               <div>
                 <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white flex items-center gap-2 font-mono">
-                  <Car className="w-4 h-4 text-emerald-500" /> Post Empty Seats
+                  <Car className="w-4 h-4 text-emerald-500 shrink-0" /> Post Empty Seats
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 font-mono">Offer seats along verified campus commuter corridors</p>
               </div>
 
-              <form onSubmit={handlePostRide} className="space-y-3 text-xs font-mono">
+              <form onSubmit={handlePostRide} className="space-y-3.5 text-xs font-mono">
                 <div>
                   <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Pickup Corridor (Origin)</label>
                   <select
                     value={postOrigin}
                     onChange={(e) => setPostOrigin(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   >
                     {locations.corridors?.map((c) => (
                       <option key={c.zone} value={c.zone}>
@@ -834,7 +837,7 @@ export default function App() {
                   <select
                     value={postGate}
                     onChange={(e) => setPostGate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   >
                     {locations.campus_gates?.map((g) => (
                       <option key={g} value={g}>{g}</option>
@@ -842,7 +845,7 @@ export default function App() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Departure Time</label>
                     <input
@@ -850,7 +853,7 @@ export default function App() {
                       placeholder="08:30 AM"
                       value={postTime}
                       onChange={(e) => setPostTime(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                      className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                   <div>
@@ -861,7 +864,7 @@ export default function App() {
                       max="6"
                       value={postSeats}
                       onChange={(e) => setPostSeats(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                      className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                 </div>
@@ -871,7 +874,7 @@ export default function App() {
                   <select
                     value={postVehicle}
                     onChange={(e) => setPostVehicle(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   >
                     <option value="car">Car (Sedan / Hatchback / SUV)</option>
                     <option value="two_wheeler">Two-Wheeler (Motorcycle / Scooty)</option>
@@ -885,22 +888,22 @@ export default function App() {
                     placeholder="e.g. Near Metro Gate 2, Leaving sharp."
                     value={postNotes}
                     onChange={(e) => setPostNotes(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={postLoading}
-                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-2.5 rounded transition-all border border-emerald-400 flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2 font-mono text-xs uppercase tracking-wider active:scale-[0.98] cursor-pointer"
+                  className="w-full min-h-[44px] bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-2.5 rounded transition-all border border-emerald-400 flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2 font-mono text-xs uppercase tracking-wider active:scale-[0.98] cursor-pointer"
                 >
                   {postLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <><PlusCircle className="w-3.5 h-3.5" /> Publish Ride</>}
                 </button>
               </form>
             </div>
 
-            {/* My Posted Rides & Passenger Sync (2 cols) */}
-            <div className="lg:col-span-2 space-y-4">
+            {/* My Posted Rides & Passenger Sync (2 cols on lg, stacked on md/sm) */}
+            <div className="lg:col-span-2 space-y-4 w-full">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white font-mono">My Posted Rides & Passengers</h2>
@@ -909,18 +912,18 @@ export default function App() {
               </div>
 
               {myPostedRides.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-[#121215] rounded border border-[#E2E8F0] dark:border-[#27272a] text-xs text-slate-500 dark:text-zinc-500 font-mono shadow-sm">
+                <div className="text-center py-12 bg-white dark:bg-[#121215] rounded border border-[#E2E8F0] dark:border-[#27272a] text-xs text-slate-500 dark:text-zinc-500 font-mono shadow-sm p-4">
                   You haven't posted any rides yet. Use the form on the left to offer seats.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {myPostedRides.map((ride) => (
-                    <div key={ride.id} className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 space-y-3 shadow-sm">
-                      <div className="flex justify-between items-start">
+                    <div key={ride.id} className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 sm:p-5 space-y-3 shadow-sm w-full">
+                      <div className="flex flex-wrap justify-between items-start gap-2">
                         <div>
                           <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#0F172A] dark:text-white">
                             <span>{ride.origin_zone}</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
+                            <ArrowRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                             <span>{ride.destination_gate}</span>
                           </div>
                           <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono block mt-0.5">
@@ -928,14 +931,14 @@ export default function App() {
                           </span>
                         </div>
                         <div className="text-right font-mono">
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                             {ride.seats_available} of {ride.seats_total} seats free
                           </span>
                         </div>
                       </div>
 
                       {/* Passenger Bookings Table */}
-                      <div className="bg-slate-50 dark:bg-[#09090b] rounded p-3 border border-[#E2E8F0] dark:border-[#27272a]">
+                      <div className="bg-slate-50 dark:bg-[#09090b] rounded p-3 border border-[#E2E8F0] dark:border-[#27272a] overflow-x-auto">
                         <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-2 font-mono">
                           Booked Passengers ({ride.passenger_bookings?.length || 0}):
                         </span>
@@ -943,7 +946,7 @@ export default function App() {
                           <span className="text-[11px] text-slate-500 dark:text-zinc-500 font-mono italic">No students booked yet. Seats open in feed.</span>
                         ) : (
                           <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs font-mono">
+                            <table className="w-full text-left text-xs font-mono min-w-[280px]">
                               <thead>
                                 <tr className="border-b border-[#E2E8F0] dark:border-[#27272a] text-slate-500 dark:text-zinc-500 text-[10px] uppercase">
                                   <th className="pb-1.5">Passenger Name</th>
@@ -954,10 +957,10 @@ export default function App() {
                               <tbody className="divide-y divide-[#E2E8F0] dark:divide-[#27272a]">
                                 {ride.passenger_bookings.map((p) => (
                                   <tr key={p.booking_id}>
-                                    <td className="py-1.5 font-semibold text-[#0F172A] dark:text-white">{p.rider_name}</td>
-                                    <td className="py-1.5 text-slate-500 dark:text-zinc-400">{p.rider_email}</td>
+                                    <td className="py-1.5 font-semibold text-[#0F172A] dark:text-white truncate max-w-[120px]">{p.rider_name}</td>
+                                    <td className="py-1.5 text-slate-500 dark:text-zinc-400 truncate max-w-[140px]">{p.rider_email}</td>
                                     <td className="py-1.5 text-right">
-                                      <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                                      <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap">
                                         Confirmed
                                       </span>
                                     </td>
@@ -1002,13 +1005,13 @@ export default function App() {
               </div>
 
               {/* Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div>
                   <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1 font-mono">Pickup Location</label>
                   <select
                     value={kccPickup}
                     onChange={(e) => setKccPickup(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   >
                     <option value="Lal Kuan">Lal Kuan (Bottleneck Test)</option>
                     <option value="Noida 62">Noida 62 (Expressway Test)</option>
@@ -1027,7 +1030,7 @@ export default function App() {
                     value={kccTime}
                     onChange={(e) => setKccTime(e.target.value)}
                     placeholder="08:30 AM"
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   />
                 </div>
 
@@ -1036,7 +1039,7 @@ export default function App() {
                   <select
                     value={kccVehicle}
                     onChange={(e) => setKccVehicle(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                   >
                     <option value="Car">Car</option>
                     <option value="Motorcycle">Motorcycle</option>
@@ -1063,7 +1066,7 @@ export default function App() {
                         .finally(() => setKccLoading(false));
                     }}
                     disabled={kccLoading}
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold py-2 px-3 rounded text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-400 disabled:opacity-50 uppercase tracking-wider active:scale-[0.98] cursor-pointer"
+                    className="w-full min-h-[44px] bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold py-2.5 px-3 rounded text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-400 disabled:opacity-50 uppercase tracking-wider active:scale-[0.98] cursor-pointer"
                   >
                     {kccLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <><Compass className="w-3.5 h-3.5" /> Predict Optimal Route</>}
                   </button>
@@ -1358,12 +1361,12 @@ export default function App() {
 
       {/* Add New Route Modal */}
       {showNewRouteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-6 max-w-md w-full shadow-2xl font-mono">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] dark:text-white mb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-5 sm:p-6 w-[95vw] max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl font-mono space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] dark:text-white mb-2">
               Add Saved Commute Route
             </h3>
-            <form onSubmit={handleCreateSavedRoute} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateSavedRoute} className="space-y-3.5 text-xs">
               <div>
                 <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Route Label</label>
                 <input
@@ -1371,7 +1374,7 @@ export default function App() {
                   placeholder="e.g. Daily Morning Metro Commute"
                   value={newRouteLabel}
                   onChange={(e) => setNewRouteLabel(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                 />
               </div>
               <div>
@@ -1379,7 +1382,7 @@ export default function App() {
                 <select
                   value={newRouteOrigin}
                   onChange={(e) => setNewRouteOrigin(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                 >
                   {locations.corridors?.map((c) => (
                     <option key={c.zone} value={c.zone}>{c.zone}</option>
@@ -1391,7 +1394,7 @@ export default function App() {
                 <select
                   value={newRouteGate}
                   onChange={(e) => setNewRouteGate(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                 >
                   {locations.campus_gates?.map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -1405,21 +1408,21 @@ export default function App() {
                   placeholder="08:30 AM"
                   value={newRouteTime}
                   onChange={(e) => setNewRouteTime(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a]">
                 <button
                   type="button"
                   onClick={() => setShowNewRouteModal(false)}
-                  className="px-3.5 py-1.5 rounded bg-slate-100 dark:bg-[#1c1c21] text-slate-700 dark:text-zinc-300 font-semibold hover:bg-slate-200 dark:hover:bg-zinc-700 border border-[#E2E8F0] dark:border-[#27272a] transition-colors text-xs active:scale-[0.98] cursor-pointer"
+                  className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 rounded bg-slate-100 dark:bg-[#1c1c21] text-slate-700 dark:text-zinc-300 font-semibold hover:bg-slate-200 dark:hover:bg-zinc-700 border border-[#E2E8F0] dark:border-[#27272a] transition-colors text-xs active:scale-[0.98] cursor-pointer flex items-center justify-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-black font-bold transition-all text-xs border border-emerald-400 active:scale-[0.98] cursor-pointer"
+                  className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-black font-bold transition-all text-xs border border-emerald-400 active:scale-[0.98] cursor-pointer flex items-center justify-center"
                 >
                   Save Route
                 </button>

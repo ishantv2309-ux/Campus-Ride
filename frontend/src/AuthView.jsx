@@ -139,17 +139,17 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col justify-between p-4 sm:p-8 font-sans">
+    <div className="min-h-screen w-full bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col justify-between p-3 sm:p-8 font-sans overflow-x-hidden">
       
       {/* Top Bar: Brand & Light/Dark Mode Toggle */}
-      <header className="max-w-md w-full mx-auto flex items-center justify-between pb-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-slate-100 dark:bg-[#121215] text-emerald-500 flex items-center justify-center font-bold text-xs rounded border border-[#E2E8F0] dark:border-emerald-500/40 font-mono">
+      <header className="max-w-md w-full mx-auto flex items-center justify-between pb-4 sm:pb-6">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 shrink-0 bg-slate-100 dark:bg-[#121215] text-emerald-500 flex items-center justify-center font-bold text-xs rounded border border-[#E2E8F0] dark:border-emerald-500/40 font-mono">
             CR
           </div>
-          <div>
-            <span className="font-bold tracking-tight text-sm font-mono text-[#0F172A] dark:text-white uppercase">Campus<span className="text-emerald-500">Ride</span></span>
-            <span className="text-[10px] block font-mono text-slate-500 dark:text-zinc-400 leading-none mt-0.5">
+          <div className="min-w-0">
+            <span className="font-bold tracking-tight text-sm font-mono text-[#0F172A] dark:text-white uppercase block truncate">Campus<span className="text-emerald-500">Ride</span></span>
+            <span className="text-[10px] block font-mono text-slate-500 dark:text-zinc-400 leading-none mt-0.5 truncate">
               KCC Institute Student Commute Network
             </span>
           </div>
@@ -160,16 +160,16 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
           type="button"
           onClick={toggleTheme}
           aria-label="Toggle theme"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] hover:border-slate-400 dark:hover:border-zinc-700 text-[#0F172A] dark:text-zinc-200 rounded active:scale-[0.98] transition-all cursor-pointer select-none"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-xs font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] hover:border-slate-400 dark:hover:border-zinc-700 text-[#0F172A] dark:text-zinc-200 rounded active:scale-[0.98] transition-all cursor-pointer select-none shrink-0"
         >
           {theme === 'dark' ? (
             <>
-              <Sun key="sun-icon-auth" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon" />
+              <Sun key="sun-icon-auth" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon shrink-0" />
               <span className="font-mono">LIGHT</span>
             </>
           ) : (
             <>
-              <Moon key="moon-icon-auth" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon" />
+              <Moon key="moon-icon-auth" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon shrink-0" />
               <span className="font-mono">DARK</span>
             </>
           )}
@@ -185,7 +185,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
             <button
               type="button"
               onClick={() => handleTabChange('signin')}
-              className={`py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all select-none rounded border active:scale-[0.98] ${
+              className={`py-2 min-h-[38px] text-xs font-mono font-bold uppercase tracking-wider transition-all select-none rounded border active:scale-[0.98] ${
                 activeTab === 'signin'
                   ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-emerald-400 border-[#E2E8F0] dark:border-emerald-500/50'
                   : 'bg-transparent text-slate-500 dark:text-zinc-400 border-transparent hover:text-[#0F172A] dark:hover:text-zinc-200'
@@ -196,7 +196,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
             <button
               type="button"
               onClick={() => handleTabChange('signup')}
-              className={`py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all select-none rounded border active:scale-[0.98] ${
+              className={`py-2 min-h-[38px] text-xs font-mono font-bold uppercase tracking-wider transition-all select-none rounded border active:scale-[0.98] ${
                 activeTab === 'signup'
                   ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-emerald-400 border-[#E2E8F0] dark:border-emerald-500/50'
                   : 'bg-transparent text-slate-500 dark:text-zinc-400 border-transparent hover:text-[#0F172A] dark:hover:text-zinc-200'
@@ -206,7 +206,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
             </button>
           </div>
 
-          <div className="p-6 sm:p-7 space-y-5">
+          <div className="p-4 sm:p-7 space-y-4 sm:space-y-5">
             
             {/* Header Text */}
             <div>
@@ -224,7 +224,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
             {statusState.type && (
               <div
                 role="alert"
-                className={`p-3.5 border text-xs font-mono font-medium flex items-start gap-2.5 rounded transition-all ${
+                className={`p-3 sm:p-3.5 border text-xs font-mono font-medium flex items-start gap-2.5 rounded transition-all ${
                   statusState.type === 'error'
                     ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800'
                     : 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800'
@@ -240,7 +240,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
               
               {/* Sign Up: Full Name */}
               {activeTab === 'signup' && (
@@ -255,7 +255,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
                       placeholder="e.g. Ishant Verma"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-[#09090B] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] rounded px-3.5 py-2 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full min-h-[42px] bg-slate-50 dark:bg-[#09090B] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] rounded px-3.5 py-2 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
                     />
                   </div>
                 </div>
@@ -277,7 +277,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
                   placeholder="rollnumber@college.edu.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full bg-slate-50 dark:bg-[#09090B] border rounded px-3.5 py-2 text-xs font-mono focus:outline-none transition-colors ${
+                  className={`w-full min-h-[42px] bg-slate-50 dark:bg-[#09090B] border rounded px-3.5 py-2 text-xs font-mono focus:outline-none transition-colors ${
                     hasTypedEmail
                       ? isCollegeEmail
                         ? 'border-emerald-500 text-[#0F172A] dark:text-[#FAFAFA]'
@@ -369,7 +369,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase tracking-wider rounded border border-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer select-none"
+                className="w-full mt-2 min-h-[44px] py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase tracking-wider rounded border border-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer select-none"
               >
                 {loading ? (
                   <span>Processing Dispatch...</span>
@@ -392,7 +392,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
               <span className="font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 block mb-1">
                 Demo Commuter Quick Fill:
               </span>
-              <div className="grid grid-cols-2 gap-2 mt-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -400,7 +400,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
                     setPassword('Campus@2026');
                     setActiveTab('signin');
                   }}
-                  className="p-2 text-left border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090b] hover:border-emerald-500/50 rounded text-[10px] transition-all active:scale-[0.98]"
+                  className="p-2 min-h-[44px] text-left border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090b] hover:border-emerald-500/50 rounded text-[10px] transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <span className="font-bold text-[#0F172A] dark:text-emerald-400 block font-mono">Driver Aarav (Car)</span>
                   <span className="text-slate-500 dark:text-zinc-500 font-mono">aarav.sharma@...</span>
@@ -412,7 +412,7 @@ export default function AuthView({ onAuthSuccess, apiBase = 'http://localhost:80
                     setPassword('Campus@2026');
                     setActiveTab('signin');
                   }}
-                  className="p-2 text-left border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090b] hover:border-emerald-500/50 rounded text-[10px] transition-all active:scale-[0.98]"
+                  className="p-2 min-h-[44px] text-left border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090b] hover:border-emerald-500/50 rounded text-[10px] transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <span className="font-bold text-[#0F172A] dark:text-emerald-400 block font-mono">Rider Rohan</span>
                   <span className="text-slate-500 dark:text-zinc-500 font-mono">rohan.verma@...</span>
