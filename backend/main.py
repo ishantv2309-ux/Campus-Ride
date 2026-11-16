@@ -294,13 +294,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Enable CORS for frontend integration
+# Enable CORS for frontend integration (Render live domain & local dev)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allows all origins including your Render domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # ==================== SCHEMAS ====================
