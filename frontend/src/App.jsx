@@ -805,45 +805,46 @@ export default function App() {
 
       {/* Sub-Header & Sleek Pill-Segmented Mode Navigation */}
       <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full -mx-3 sm:-mx-6">
-        <div className="max-w-7xl mx-auto flex items-center">
-          {/* Mode Switcher: Sleek Pill-Segmented Control with pr-6 for unclipped swipe */}
-          <div className="flex-1 min-w-0 flex overflow-x-auto whitespace-nowrap gap-2 pb-1 -mx-3 px-3 pr-6 scrollbar-none">
-            <div className="inline-flex w-auto min-w-full sm:min-w-0 p-1 pr-6 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
+        <div className="max-w-7xl mx-auto flex items-center justify-center sm:justify-start">
+          {/* Mode Switcher: 3-column equal grid on mobile (<640px), inline-flex on sm+ */}
+          <div className="w-full sm:w-auto">
+            <div className="grid grid-cols-3 w-full sm:inline-flex sm:w-auto gap-1 p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-xl sm:rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner">
               <button
                 type="button"
                 onClick={() => setActiveTab('rider')}
-                className={`flex-1 sm:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-2 py-1.5 text-xs sm:px-3.5 sm:py-2 sm:text-sm rounded-lg sm:rounded-full font-semibold transition-all flex items-center gap-1 sm:gap-1.5 min-w-0 active:scale-[0.98] cursor-pointer ${
                   activeTab === 'rider'
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Users className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Rider Dispatch</span>
+                <span className="truncate">Rider Dispatch</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('driver')}
-                className={`flex-1 sm:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-2 py-1.5 text-xs sm:px-3.5 sm:py-2 sm:text-sm rounded-lg sm:rounded-full font-semibold transition-all flex items-center gap-1 sm:gap-1.5 min-w-0 active:scale-[0.98] cursor-pointer ${
                   activeTab === 'driver'
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Car className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                <span>Driver Mode</span>
+                <span className="truncate">Driver Mode</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('matcher')}
-                className={`flex-1 sm:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-2 py-1.5 text-xs sm:px-3.5 sm:py-2 sm:text-sm rounded-lg sm:rounded-full font-semibold transition-all flex items-center gap-1 sm:gap-1.5 min-w-0 active:scale-[0.98] cursor-pointer ${
                   activeTab === 'matcher'
                     ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm shadow-emerald-500/20'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                <span>AutoML Route Engine</span>
+                <span className="sm:hidden truncate">AutoML Engine</span>
+                <span className="hidden sm:inline whitespace-nowrap">AutoML Route Engine</span>
               </button>
             </div>
           </div>
