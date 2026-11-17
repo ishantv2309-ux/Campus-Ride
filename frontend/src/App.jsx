@@ -32,7 +32,9 @@ import {
   Filter,
   Activity,
   Navigation,
-  Zap
+  Zap,
+  Trash2,
+  X
 } from 'lucide-react';
 
 // Relative API base path allows frontend to dynamically target the active host
@@ -100,8 +102,18 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Dashboard Data State
-  const [savedRoutes, setSavedRoutes] = useState([]);
+  // Dashboard Data State - Initialized with localStorage persistence
+  const [savedRoutes, setSavedRoutes] = useState(() => {
+    try {
+      const cached = localStorage.getItem('campusride_saved_routes');
+      const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        return Array.isArray(parsed) ? parsed.filter(r => !deletedIds.includes(r.id)) : [];
+      }
+    } catch (e) {}
+    return [];
+  });
   const [activeRides, setActiveRides] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [myPostedRides, setMyPostedRides] = useState([]);
@@ -234,7 +246,15 @@ export default function App() {
     ])
       .then(([rides, routes, bookings, posted]) => {
         setActiveRides(Array.isArray(rides) ? rides : []);
-        setSavedRoutes(Array.isArray(routes) ? routes : []);
+
+        // Filter out locally deleted routes to ensure persistence across API reloads
+        const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+        const validRoutes = (Array.isArray(routes) ? routes : []).filter(r => !deletedIds.includes(r.id));
+        setSavedRoutes(validRoutes);
+        try {
+          localStorage.setItem('campusride_saved_routes', JSON.stringify(validRoutes));
+        } catch (e) {}
+
         setMyBookings(Array.isArray(bookings) ? bookings : []);
         setMyPostedRides(Array.isArray(posted) ? posted : []);
       })
@@ -421,6 +441,12 @@ export default function App() {
       notify(`Saved route "${data.route_label}" created!`);
       setShowNewRouteModal(false);
       setNewRouteLabel('');
+      // Update local storage cache
+      try {
+        const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+        const updatedDeleted = deletedIds.filter(id => id !== data.id);
+        localStorage.setItem('campusride_deleted_route_ids', JSON.stringify(updatedDeleted));
+      } catch (e) {}
       refreshDashboard();
     } catch (err) {
       notify(err.message, 'error');
@@ -435,6 +461,41 @@ export default function App() {
     setSandboxOrigin(route.origin_zone);
     setSandboxGate(route.campus_gate);
     notify(`Autofilled: ${route.origin_zone} ➔ ${route.campus_gate}`);
+  };
+
+  // Delete / Remove Saved Corridor Item
+  const handleDeleteSavedRoute = async (routeId, e) => {
+    if (e) e.stopPropagation();
+
+    // 1. Remove from local component state immediately
+    const updatedRoutes = savedRoutes.filter((r) => r.id !== routeId);
+    setSavedRoutes(updatedRoutes);
+
+    // 2. Persist in localStorage and update deleted tombstones
+    try {
+      localStorage.setItem('campusride_saved_routes', JSON.stringify(updatedRoutes));
+      const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+      if (!deletedIds.includes(routeId)) {
+        deletedIds.push(routeId);
+        localStorage.setItem('campusride_deleted_route_ids', JSON.stringify(deletedIds));
+      }
+    } catch (err) {
+      console.error('Error saving deleted route to localStorage:', err);
+    }
+
+    notify('Saved commute corridor removed.');
+
+    // 3. Sync deletion to backend if authenticated
+    if (token) {
+      try {
+        await fetch(`${API_BASE}/routes/saved/${routeId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.warn('Backend route deletion sync note:', err);
+      }
+    }
   };
 
   // Export Trips CSV (Continuous Learning Loop)
@@ -647,12 +708,26 @@ export default function App() {
                       <span className="text-slate-600 dark:text-zinc-400">{route.campus_gate}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleUseSavedRoute(route)}
-                    className="w-full mt-1 bg-white dark:bg-[#121215] hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:text-[#0F172A] dark:hover:text-white text-[11px] font-mono font-semibold py-1 rounded transition-all flex items-center justify-center gap-1.5 border border-[#E2E8F0] dark:border-[#27272a] active:scale-[0.98] cursor-pointer"
-                  >
-                    <Check className="w-3 h-3 text-emerald-500" /> Apply Route
-                  </button>
+                  <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-[#E2E8F0] dark:border-[#27272a]">
+                    <button
+                      type="button"
+                      onClick={() => handleUseSavedRoute(route)}
+                      className="flex-1 bg-white dark:bg-[#121215] hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:text-[#0F172A] dark:hover:text-white text-[11px] font-mono font-semibold py-1 px-2 rounded transition-all flex items-center justify-center gap-1 border border-[#E2E8F0] dark:border-[#27272a] active:scale-[0.98] cursor-pointer"
+                    >
+                      <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+                      <span>Apply Route</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteSavedRoute(route.id, e)}
+                      title="Remove saved corridor"
+                      aria-label="Remove saved corridor"
+                      className="px-2 py-1 rounded bg-white dark:bg-[#121215] hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-[#E2E8F0] dark:border-[#27272a] hover:border-rose-300 dark:hover:border-rose-800 text-[11px] font-mono font-semibold transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3 text-rose-500 shrink-0" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
