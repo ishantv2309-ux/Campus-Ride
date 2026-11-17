@@ -194,6 +194,7 @@ export default function LiveRouteMap({
   locationError = null,
   onRequestLocation,
   compact = false,
+  className = '',
 }) {
   // Determine active hub
   const activeHub = useMemo(() => {
@@ -228,7 +229,7 @@ export default function LiveRouteMap({
   }, [userLocation]);
 
   return (
-    <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded overflow-hidden shadow-sm transition-colors w-full">
+    <div className={`bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded overflow-hidden shadow-sm transition-colors w-full ${className}`}>
       {/* Map Header Bar */}
       <div className="px-3.5 py-2.5 border-b border-[#E2E8F0] dark:border-[#27272a] bg-slate-50 dark:bg-[#09090b] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
         <div className="flex items-center gap-2">

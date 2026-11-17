@@ -959,8 +959,8 @@ export default function App() {
                       </div>
                     ))}
 
-                    {/* Passenger Live Tracking Map for Active Bookings */}
-                    <div className="mt-4 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a] space-y-2">
+                    {/* Passenger Live Tracking Map for Active Bookings (Desktop/Tablet multi-instance; hidden on mobile to enforce single map view) */}
+                    <div className="hidden md:block mt-4 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a] space-y-2">
                       <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400 block uppercase tracking-wider font-semibold">
                         Live Passenger Route Tracking
                       </span>
@@ -973,6 +973,26 @@ export default function App() {
                         locationError={locationError}
                         onRequestLocation={requestLocation}
                       />
+                    </div>
+
+                    {/* Mobile fallback indicator connecting user to primary interactive map */}
+                    <div className="md:hidden mt-3 pt-2 border-t border-[#E2E8F0] dark:border-[#27272a] flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                      <span className="flex items-center gap-1.5 truncate">
+                        <Compass className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span>Live GPS route active in main radar</span>
+                      </span>
+                      {!showLiveMap && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLiveMap(true);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="text-emerald-600 dark:text-emerald-400 font-semibold underline shrink-0 cursor-pointer text-[10px]"
+                        >
+                          Show Radar
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
