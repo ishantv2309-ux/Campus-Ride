@@ -195,11 +195,9 @@ export default function LiveRouteMap({
   onRequestLocation,
   compact = false,
 }) {
-  // Tile URLs for seamless Light/Dark toggle
-  const tileUrl =
-    theme === 'dark'
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  // Official free OpenStreetMap tile provider (no API key required)
+  const osmTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const osmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
   // Determine active hub
   const activeHub = useMemo(() => {
@@ -309,14 +307,13 @@ export default function LiveRouteMap({
           zoom={mapZoom}
           scrollWheelZoom={false}
           className="w-full h-full"
-          attributionControl={false}
         >
           <MapViewUpdater center={mapCenter} zoom={mapZoom} />
 
           <TileLayer
-            url={tileUrl}
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             maxZoom={19}
-            subdomains="abcd"
           />
 
           {/* KCC Institute Destination Marker */}

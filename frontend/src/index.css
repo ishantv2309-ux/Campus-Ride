@@ -127,3 +127,8 @@ td {
   background: transparent !important;
   border: none !important;
 }
+
+/* Invert OpenStreetMap tiles in Dark Mode to match deep obsidian aesthetic */
+html.dark .leaflet-tile-pane {
+  filter: brightness(0.68) invert(1) contrast(1.1) hue-rotate(200deg) saturate(0.35);
+}
