@@ -703,7 +703,7 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col font-sans w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col font-sans w-full overflow-x-hidden px-3 sm:px-6">
       {/* Tactical Toast Notification */}
       {notification && (
         <div className={`fixed top-3 left-3 right-3 sm:left-auto sm:right-4 z-[10050] max-w-sm sm:max-w-md px-3.5 sm:px-4 py-2.5 rounded border flex items-center gap-2.5 text-xs font-mono shadow-xl transition-all ${
@@ -719,9 +719,9 @@ export default function App() {
       )}
 
       {/* Top Header: Campus Navigation & Student Trust Console */}
-      <header className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 sticky top-0 z-40 transition-colors w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-          <div className="flex items-center justify-between md:justify-start gap-2.5 sm:gap-3 min-w-0 w-full md:w-auto">
+      <header className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 sticky top-0 z-40 transition-colors w-full -mx-3 sm:-mx-6 px-3 sm:px-6">
+        <div className="max-w-7xl mx-auto py-2.5 sm:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 min-w-0 w-full sm:w-auto">
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm">
                 CR
@@ -744,7 +744,7 @@ export default function App() {
           </div>
 
           {/* User Status Bar & Controls */}
-          <div className="flex items-center justify-between md:justify-end gap-1.5 sm:gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t border-slate-100 dark:border-zinc-800/50 md:border-t-0">
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t border-slate-100 dark:border-zinc-800/50 sm:border-t-0">
             {/* Tactile Theme Toggle */}
             <button
               type="button"
@@ -766,7 +766,7 @@ export default function App() {
             </button>
 
             {/* Student Profile Identity Badge with Academic Trust Cue */}
-            <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 shadow-sm">
+            <div className="flex-1 sm:flex-initial flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 shadow-sm">
               <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-[11px] shrink-0">
                 {currentUser?.full_name?.charAt(0) || 'U'}
               </div>
@@ -793,15 +793,15 @@ export default function App() {
       </header>
 
       {/* Sub-Header & Sleek Pill-Segmented Mode Navigation */}
-      <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+      <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full -mx-3 sm:-mx-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
           {/* Mode Switcher: Sleek Pill-Segmented Control */}
-          <div className="flex-1 min-w-0 overflow-x-auto whitespace-nowrap scrollbar-none no-scrollbar py-2 px-1">
+          <div className="flex-1 min-w-0 flex overflow-x-auto whitespace-nowrap gap-2 pb-2 -mx-3 px-3 scrollbar-none">
             <div className="inline-flex w-auto min-w-full sm:min-w-0 p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
               <button
                 type="button"
                 onClick={() => setActiveTab('rider')}
-                className={`flex-1 md:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'rider'
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -813,7 +813,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveTab('driver')}
-                className={`flex-1 md:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'driver'
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -825,7 +825,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveTab('matcher')}
-                className={`flex-1 md:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'matcher'
                     ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm shadow-emerald-500/20'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -851,10 +851,10 @@ export default function App() {
       </div>
 
       {/* Main Body */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-6 flex-1 w-full space-y-3 sm:space-y-6">
+      <main className="max-w-7xl mx-auto py-3 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
 
         {/* 1. SAVED ROUTES SECTION */}
-        <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl p-3 sm:p-6 transition-all shadow-sm w-full">
+        <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl p-4 sm:p-6 transition-all shadow-sm w-full">
           <div className="flex justify-between items-center mb-3.5">
             <div className="flex items-center gap-2">
               <Bookmark className="w-4 h-4 text-emerald-500" />
@@ -876,11 +876,11 @@ export default function App() {
               No saved routes yet. Add your daily home commute corridor for 1-click autofill.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {savedRoutes.map((route) => (
                 <div
                   key={route.id}
-                  className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 p-3.5 rounded-xl flex flex-col justify-between transition-all"
+                  className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 p-4 rounded-xl flex flex-col justify-between transition-all"
                 >
                   <div>
                     <div className="font-semibold text-xs text-slate-900 dark:text-white mb-1.5 flex items-center justify-between gap-2">
@@ -937,7 +937,7 @@ export default function App() {
 
         {/* 2. MODE CONTENT: RIDER VIEW */}
         {activeTab === 'rider' && (
-          <div id="available-rides-section" className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+          <div id="available-rides-section" className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
             {/* Live Ride Feed (2 cols on lg, stacked on md/sm) */}
             <div className="lg:col-span-2 space-y-4 w-full">
               <div className="flex flex-wrap justify-between items-center gap-2">
@@ -964,7 +964,7 @@ export default function App() {
 
               {/* Live Interactive Corridor Radar & Geolocation Map */}
               {showLiveMap && (
-                <div className={`w-full relative z-0 transition-all duration-300 rounded-2xl overflow-hidden ${
+                <div className={`w-full relative z-0 transition-all duration-300 rounded-xl overflow-hidden ${
                   isMapPulsing ? 'ring-2 ring-emerald-500 shadow-lg shadow-emerald-500/25 animate-pulse' : ''
                 }`}>
                   <LiveRouteMap
@@ -1032,7 +1032,7 @@ export default function App() {
                     return (
                       <div
                         key={ride.id}
-                        className={`bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border rounded-2xl p-3 sm:p-6 flex flex-col justify-between gap-3.5 transition-all shadow-sm hover:shadow-md w-full ${
+                        className={`bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border rounded-2xl p-4 sm:p-6 flex flex-col justify-between gap-3.5 transition-all shadow-sm hover:shadow-md w-full ${
                           isRadarMatched
                             ? 'border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-500/50 shadow-md shadow-emerald-500/10'
                             : 'border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700'
@@ -1159,7 +1159,7 @@ export default function App() {
 
             {/* Sidebar: Confirmed Bookings (Stacks cleanly below on mobile/tablet) */}
             <div className="space-y-4 w-full">
-              <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 shadow-sm w-full">
+              <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 shadow-sm w-full">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3.5 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Confirmed Bookings
                 </h3>
@@ -1235,9 +1235,9 @@ export default function App() {
 
         {/* 3. MODE CONTENT: DRIVER VIEW */}
         {activeTab === 'driver' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full">
             {/* Post Ride Card (1 col on lg, stacked on md/sm) */}
-            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 space-y-4 shadow-sm w-full">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm w-full">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Car className="w-4 h-4 text-emerald-500 shrink-0" /> Post Empty Seats
@@ -1350,7 +1350,7 @@ export default function App() {
                     if (!ride) return null;
                     const bookings = Array.isArray(ride.passenger_bookings) ? ride.passenger_bookings : [];
                     return (
-                      <div key={ride.id || Math.random()} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
+                      <div key={ride.id || Math.random()} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
                         <div className="flex flex-wrap justify-between items-start gap-2">
                           <div>
                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
@@ -1419,7 +1419,7 @@ export default function App() {
         {activeTab === 'matcher' && (
           <div className="space-y-6">
             {/* KCC Institute Specific AutoML Route Predictor Card */}
-            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 space-y-5 shadow-sm">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-6 space-y-5 shadow-sm">
               <div className="flex flex-wrap justify-between items-start gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-4">
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-emerald-200 dark:border-emerald-800">
@@ -1874,7 +1874,7 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-t border-slate-200/80 dark:border-zinc-800/80 py-4 px-4 text-center text-xs text-slate-500 dark:text-zinc-400 transition-colors">
+      <footer className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-t border-slate-200/80 dark:border-zinc-800/80 py-4 px-4 text-center text-xs text-slate-500 dark:text-zinc-400 transition-colors -mx-3 sm:-mx-6">
         CampusRide • KCC Institute of Technology and Management Student Commute Network
       </footer>
     </div>
