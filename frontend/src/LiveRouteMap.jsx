@@ -195,10 +195,6 @@ export default function LiveRouteMap({
   onRequestLocation,
   compact = false,
 }) {
-  // Official free OpenStreetMap tile provider (no API key required)
-  const osmTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const osmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-
   // Determine active hub
   const activeHub = useMemo(() => {
     if (!activeHubFilter || activeHubFilter === 'All Hubs') return null;
@@ -306,13 +302,15 @@ export default function LiveRouteMap({
           center={mapCenter}
           zoom={mapZoom}
           scrollWheelZoom={false}
+          zoomControl={false}
+          attributionControl={false}
           className="w-full h-full"
         >
           <MapViewUpdater center={mapCenter} zoom={mapZoom} />
 
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution=""
             maxZoom={19}
           />
 
