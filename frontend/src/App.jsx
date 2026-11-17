@@ -720,7 +720,7 @@ export default function App() {
 
       {/* Top Header: Campus Navigation & Student Trust Console */}
       <header className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 sticky top-0 z-40 transition-colors w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex items-center justify-between md:justify-start gap-2.5 sm:gap-3 min-w-0 w-full md:w-auto">
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm">
@@ -736,7 +736,7 @@ export default function App() {
                     KCC Verified
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-zinc-400 block truncate max-w-[200px] xs:max-w-[260px] sm:max-w-none">
+                <span className="text-[11px] text-slate-500 dark:text-zinc-400 block truncate">
                   KCC Institute of Technology & Management • Knowledge Park II
                 </span>
               </div>
@@ -766,7 +766,7 @@ export default function App() {
             </button>
 
             {/* Student Profile Identity Badge with Academic Trust Cue */}
-            <div className="flex-1 md:flex-none flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 max-w-[180px] xs:max-w-[220px] sm:max-w-[260px] shadow-sm">
+            <div className="flex-1 md:flex-initial flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 shadow-sm">
               <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-[11px] shrink-0">
                 {currentUser?.full_name?.charAt(0) || 'U'}
               </div>
@@ -796,8 +796,8 @@ export default function App() {
       <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
           {/* Mode Switcher: Sleek Pill-Segmented Control */}
-          <div className="flex-1 min-w-0 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5">
-            <div className="inline-flex w-full md:w-auto p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
+          <div className="flex-1 min-w-0 overflow-x-auto whitespace-nowrap scrollbar-none no-scrollbar py-2 px-1">
+            <div className="inline-flex w-auto min-w-full sm:min-w-0 p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
               <button
                 type="button"
                 onClick={() => setActiveTab('rider')}
@@ -851,10 +851,10 @@ export default function App() {
       </div>
 
       {/* Main Body */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-6 flex-1 w-full space-y-3 sm:space-y-6">
 
         {/* 1. SAVED ROUTES SECTION */}
-        <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl p-5 sm:p-6 transition-all shadow-sm w-full">
+        <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl p-3 sm:p-6 transition-all shadow-sm w-full">
           <div className="flex justify-between items-center mb-3.5">
             <div className="flex items-center gap-2">
               <Bookmark className="w-4 h-4 text-emerald-500" />
@@ -1032,7 +1032,7 @@ export default function App() {
                     return (
                       <div
                         key={ride.id}
-                        className={`bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 transition-all shadow-sm hover:shadow-md w-full ${
+                        className={`bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border rounded-2xl p-3 sm:p-6 flex flex-col justify-between gap-3.5 transition-all shadow-sm hover:shadow-md w-full ${
                           isRadarMatched
                             ? 'border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-500/50 shadow-md shadow-emerald-500/10'
                             : 'border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700'
@@ -1159,7 +1159,7 @@ export default function App() {
 
             {/* Sidebar: Confirmed Bookings (Stacks cleanly below on mobile/tablet) */}
             <div className="space-y-4 w-full">
-              <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-sm w-full">
+              <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 shadow-sm w-full">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3.5 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Confirmed Bookings
                 </h3>
@@ -1237,7 +1237,7 @@ export default function App() {
         {activeTab === 'driver' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
             {/* Post Ride Card (1 col on lg, stacked on md/sm) */}
-            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm w-full">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 space-y-4 shadow-sm w-full">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Car className="w-4 h-4 text-emerald-500 shrink-0" /> Post Empty Seats
@@ -1350,7 +1350,7 @@ export default function App() {
                     if (!ride) return null;
                     const bookings = Array.isArray(ride.passenger_bookings) ? ride.passenger_bookings : [];
                     return (
-                      <div key={ride.id || Math.random()} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
+                      <div key={ride.id || Math.random()} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
                         <div className="flex flex-wrap justify-between items-start gap-2">
                           <div>
                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
@@ -1419,7 +1419,7 @@ export default function App() {
         {activeTab === 'matcher' && (
           <div className="space-y-6">
             {/* KCC Institute Specific AutoML Route Predictor Card */}
-            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-3 sm:p-6 space-y-5 shadow-sm">
               <div className="flex flex-wrap justify-between items-start gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-4">
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-emerald-200 dark:border-emerald-800">
