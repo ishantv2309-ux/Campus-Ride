@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Custom hook to manage HTML5 Geolocation with permission state and safe mobile fallback handling.
- * Prevents mobile browsers from crashing on non-secure origins or when GPS access is blocked.
+ * Custom hook to safely manage HTML5 Geolocation with permission state and safe mobile fallback handling.
+ * Prevents mobile browsers from crashing on non-secure origins, missing APIs, or permission rejections.
  */
 export function useGeolocation(autoPrompt = true) {
   const [location, setLocation] = useState(null);
@@ -13,46 +13,45 @@ export function useGeolocation(autoPrompt = true) {
   // Query permissions API safely if available and supported
   useEffect(() => {
     try {
-      if (typeof window !== 'undefined' && navigator?.permissions?.query) {
+      if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.permissions?.query) {
         navigator.permissions.query({ name: 'geolocation' })
           .then((result) => {
             if (result) {
-              setPermissionState(result.state);
+              setPermissionState(result.state || 'prompt');
               result.onchange = () => {
                 try {
-                  setPermissionState(result.state);
-                } catch (e) {}
+                  setPermissionState(result.state || 'prompt');
+                } catch {
+                  // Ignore permission change listener error
+                }
               };
             }
           })
           .catch(() => {
-            // Permissions API query not supported for geolocation in some browsers (e.g. Safari)
+            // Permissions API query not supported for geolocation in some mobile browsers (e.g. Safari)
           });
       }
-    } catch (e) {
+    } catch {
       // Ignore permissions check exception
     }
   }, []);
 
   const requestLocation = useCallback(() => {
     try {
-      // 1. Guard check: verify navigator.geolocation exists
+      // 1. Browser-only conditional check
       if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
-        setError('Geolocation is not supported by your browser.');
+        setError('Geolocation is not supported by your mobile browser.');
         setPermissionState('unavailable');
         return;
       }
 
-      // 2. HTTPS / Secure context check for mobile browsers
-      // Mobile Safari and Chrome strictly reject geolocation in non-secure contexts (e.g., plain http://) unless localhost
-      const isLocal = typeof window !== 'undefined' && (
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1' ||
-        window.location.hostname === '[::1]'
-      );
+      // 2. HTTPS / Secure context check for mobile devices
+      // Mobile Safari and Chrome strictly block GPS on non-secure origins unless localhost
+      const hostname = window.location?.hostname || '';
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
 
-      if (typeof window !== 'undefined' && window.isSecureContext === false && !isLocal) {
-        console.warn('Geolocation blocked: insecure HTTP origin on mobile. Falling back to default corridor.');
+      if (window.isSecureContext === false && !isLocal) {
+        console.warn('Geolocation blocked: Insecure HTTP connection on mobile. Silently using default corridor coordinates.');
         setError('Location blocked on non-secure connection.');
         setPermissionState('denied');
         return;
@@ -61,51 +60,69 @@ export function useGeolocation(autoPrompt = true) {
       setLoading(true);
       setError(null);
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          try {
-            if (position?.coords) {
-              const coords = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-                timestamp: position.timestamp || Date.now(),
-              };
-              setLocation(coords);
-              setPermissionState('granted');
+      // Safe invocation of navigator.geolocation.getCurrentPosition
+      if (typeof window !== 'undefined' && navigator.geolocation) {
+        try {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              try {
+                if (position?.coords) {
+                  const lat = position.coords.latitude;
+                  const lng = position.coords.longitude;
+
+                  // Guard against invalid NaN or non-number coordinates
+                  if (typeof lat === 'number' && !isNaN(lat) && typeof lng === 'number' && !isNaN(lng)) {
+                    const coords = {
+                      lat,
+                      lng,
+                      accuracy: position.coords.accuracy || 10,
+                      timestamp: position.timestamp || Date.now(),
+                    };
+                    setLocation(coords);
+                    setPermissionState('granted');
+                  }
+                }
+              } catch (posErr) {
+                console.warn('Geolocation coordinate extraction caught safely:', posErr);
+              } finally {
+                setLoading(false);
+              }
+            },
+            (err) => {
+              let msg = 'Unable to retrieve location.';
+              if (err) {
+                if (err.code === err.PERMISSION_DENIED || err.code === 1) {
+                  msg = 'Location permission denied by user.';
+                  setPermissionState('denied');
+                } else if (err.code === err.POSITION_UNAVAILABLE || err.code === 2) {
+                  msg = 'Location information is unavailable.';
+                  setPermissionState('unavailable');
+                } else if (err.code === err.TIMEOUT || err.code === 3) {
+                  msg = 'Location request timed out.';
+                  setPermissionState('unavailable');
+                }
+              }
+              console.warn('Geolocation fallback active:', msg);
+              setError(msg);
+              setLoading(false);
+            },
+            {
+              enableHighAccuracy: false, // Low power / fast fix to prevent cellular mobile GPS freeze
+              timeout: 8000,
+              maximumAge: 60000,
             }
-          } catch (err) {
-            console.warn('Geolocation coordinate extraction error:', err);
-          } finally {
-            setLoading(false);
-          }
-        },
-        (err) => {
-          let msg = 'Unable to retrieve location.';
-          if (err) {
-            if (err.code === err.PERMISSION_DENIED || err.code === 1) {
-              msg = 'Location permission denied by user.';
-              setPermissionState('denied');
-            } else if (err.code === err.POSITION_UNAVAILABLE || err.code === 2) {
-              msg = 'Location information is unavailable.';
-              setPermissionState('unavailable');
-            } else if (err.code === err.TIMEOUT || err.code === 3) {
-              msg = 'Location request timed out.';
-              setPermissionState('unavailable');
-            }
-          }
-          console.warn('Geolocation fallback active:', msg);
-          setError(msg);
+          );
+        } catch (callErr) {
+          console.warn('getCurrentPosition call threw exception safely caught:', callErr);
+          setError('Location unavailable');
+          setPermissionState('unavailable');
           setLoading(false);
-        },
-        {
-          enableHighAccuracy: false, // Low power / fast fix to prevent cellular mobile GPS freeze
-          timeout: 8000,
-          maximumAge: 60000,
         }
-      );
+      } else {
+        setLoading(false);
+      }
     } catch (err) {
-      console.warn('Geolocation invocation caught safely:', err);
+      console.warn('Geolocation request failed safely:', err);
       setError('Location unavailable');
       setPermissionState('unavailable');
       setLoading(false);

@@ -43,32 +43,78 @@ import {
 // (e.g., https://campus-ride-f16x.onrender.com/api in production or Vite proxy in dev)
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
+// Safe browser storage helper to prevent mobile browser storage exceptions (e.g. Safari private mode)
+const safeStorage = {
+  getItem: (key) => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch {
+      // Storage access blocked or restricted
+    }
+    return null;
+  },
+  setItem: (key, val) => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, val);
+      }
+    } catch {}
+  },
+  removeItem: (key) => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch {}
+  }
+};
+
+const safeJsonParse = (str, fallback = null) => {
+  try {
+    return str ? JSON.parse(str) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export default function App() {
-  // Theme State
+  // Theme State with safe mobile matchMedia check
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('campusride_theme') || 
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    try {
+      const stored = safeStorage.getItem('campusride_theme');
+      if (stored) return stored;
+      if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    } catch {}
+    return 'light';
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('campusride_theme', theme);
+    try {
+      if (typeof document !== 'undefined') {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+      }
+      safeStorage.setItem('campusride_theme', theme);
+    } catch {}
   }, [theme]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  // Session State
-  const [token, setToken] = useState(() => localStorage.getItem('campusride_jwt') || '');
+  // Session State with safe null fallbacks
+  const [token, setToken] = useState(() => safeStorage.getItem('campusride_jwt') || '');
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('campusride_user');
-    return saved ? JSON.parse(saved) : null;
+    const saved = safeStorage.getItem('campusride_user');
+    return safeJsonParse(saved, null);
   });
 
   // UI Navigation Mode: 'welcome' (if no token) | 'rider' | 'driver' | 'matcher'
@@ -109,16 +155,18 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Dashboard Data State - Initialized with localStorage persistence
+  // Dashboard Data State - Initialized with safe localStorage persistence and fallbacks
   const [savedRoutes, setSavedRoutes] = useState(() => {
     try {
-      const cached = localStorage.getItem('campusride_saved_routes');
-      const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+      const cached = safeStorage.getItem('campusride_saved_routes');
+      const deletedIds = safeJsonParse(safeStorage.getItem('campusride_deleted_route_ids'), []);
       if (cached) {
-        const parsed = JSON.parse(cached);
-        return Array.isArray(parsed) ? parsed.filter(r => !deletedIds.includes(r.id)) : [];
+        const parsed = safeJsonParse(cached, []);
+        return Array.isArray(parsed) ? parsed.filter(r => r && !deletedIds.includes(r.id)) : [];
       }
-    } catch (e) {}
+    } catch {
+      // Fallback
+    }
     return [];
   });
   const [activeRides, setActiveRides] = useState([]);
@@ -254,27 +302,35 @@ export default function App() {
     setTimeout(() => setNotification(null), 4500);
   };
 
-  // Fetch Locations Metadata
+  // Fetch Locations Metadata with safe array fallbacks
   useEffect(() => {
     fetch(`${API_BASE}/meta/locations`)
-      .then(res => res.json())
+      .then(res => res.ok ? res.json() : {})
       .then(data => {
-        setLocations(data);
-        if (data.corridors?.length > 0) {
-          setPostOrigin(data.corridors[0].zone);
-          setNewRouteOrigin(data.corridors[0].zone);
-          setSandboxOrigin(data.corridors[0].zone);
+        const safeData = data || {};
+        const corridors = Array.isArray(safeData.corridors) ? safeData.corridors : [];
+        const campus_gates = Array.isArray(safeData.campus_gates) ? safeData.campus_gates : [];
+        const vehicle_types = Array.isArray(safeData.vehicle_types) ? safeData.vehicle_types : [];
+
+        setLocations({ corridors, campus_gates, vehicle_types });
+        if (corridors.length > 0 && corridors[0]?.zone) {
+          setPostOrigin(corridors[0].zone);
+          setNewRouteOrigin(corridors[0].zone);
+          setSandboxOrigin(corridors[0].zone);
         }
-        if (data.campus_gates?.length > 0) {
-          setPostGate(data.campus_gates[0]);
-          setNewRouteGate(data.campus_gates[0]);
-          setSandboxGate(data.campus_gates[0]);
+        if (campus_gates.length > 0 && campus_gates[0]) {
+          setPostGate(campus_gates[0]);
+          setNewRouteGate(campus_gates[0]);
+          setSandboxGate(campus_gates[0]);
         }
       })
-      .catch(err => console.error('Error fetching locations:', err));
+      .catch(err => {
+        console.error('Error fetching locations:', err);
+        setLocations({ corridors: [], campus_gates: [], vehicle_types: [] });
+      });
   }, []);
 
-  // Fetch Dashboard Content when user is authenticated
+  // Fetch Dashboard Content when user is authenticated with safe fallbacks
   const refreshDashboard = () => {
     if (!token) return;
     setLoadingFeed(true);
@@ -282,26 +338,29 @@ export default function App() {
     const headers = { Authorization: `Bearer ${token}` };
 
     Promise.all([
-      fetch(`${API_BASE}/rides`).then(r => r.json()),
-      fetch(`${API_BASE}/routes/saved`, { headers }).then(r => r.ok ? r.json() : []),
-      fetch(`${API_BASE}/bookings/my-bookings`, { headers }).then(r => r.ok ? r.json() : []),
-      fetch(`${API_BASE}/rides/my-posted`, { headers }).then(r => r.ok ? r.json() : [])
+      fetch(`${API_BASE}/rides`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_BASE}/routes/saved`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_BASE}/bookings/my-bookings`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_BASE}/rides/my-posted`, { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
     ])
       .then(([rides, routes, bookings, posted]) => {
         setActiveRides(Array.isArray(rides) ? rides : []);
 
-        // Filter out locally deleted routes to ensure persistence across API reloads
-        const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
-        const validRoutes = (Array.isArray(routes) ? routes : []).filter(r => !deletedIds.includes(r.id));
+        const deletedIds = safeJsonParse(safeStorage.getItem('campusride_deleted_route_ids'), []);
+        const validRoutes = (Array.isArray(routes) ? routes : []).filter(r => r && !deletedIds.includes(r.id));
         setSavedRoutes(validRoutes);
-        try {
-          localStorage.setItem('campusride_saved_routes', JSON.stringify(validRoutes));
-        } catch (e) {}
+        safeStorage.setItem('campusride_saved_routes', JSON.stringify(validRoutes));
 
         setMyBookings(Array.isArray(bookings) ? bookings : []);
         setMyPostedRides(Array.isArray(posted) ? posted : []);
       })
-      .catch(err => console.error('Error refreshing dashboard:', err))
+      .catch(err => {
+        console.error('Error refreshing dashboard:', err);
+        setActiveRides(prev => Array.isArray(prev) ? prev : []);
+        setSavedRoutes(prev => Array.isArray(prev) ? prev : []);
+        setMyBookings(prev => Array.isArray(prev) ? prev : []);
+        setMyPostedRides(prev => Array.isArray(prev) ? prev : []);
+      })
       .finally(() => setLoadingFeed(false));
   };
 
@@ -361,8 +420,8 @@ export default function App() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Registration failed');
 
-        localStorage.setItem('campusride_jwt', data.access_token);
-        localStorage.setItem('campusride_user', JSON.stringify(data.user));
+        safeStorage.setItem('campusride_jwt', data.access_token);
+        safeStorage.setItem('campusride_user', JSON.stringify(data.user));
         setToken(data.access_token);
         setCurrentUser(data.user);
         notify(`Welcome to CampusRide, ${data.user.full_name}! Verified @college.edu.in account created.`);
@@ -378,8 +437,8 @@ export default function App() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Login failed');
 
-        localStorage.setItem('campusride_jwt', data.access_token);
-        localStorage.setItem('campusride_user', JSON.stringify(data.user));
+        safeStorage.setItem('campusride_jwt', data.access_token);
+        safeStorage.setItem('campusride_user', JSON.stringify(data.user));
         setToken(data.access_token);
         setCurrentUser(data.user);
         notify(`Logged in as ${data.user.full_name} (${data.user.role.toUpperCase()})`);
@@ -392,8 +451,8 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('campusride_jwt');
-    localStorage.removeItem('campusride_user');
+    safeStorage.removeItem('campusride_jwt');
+    safeStorage.removeItem('campusride_user');
     setToken('');
     setCurrentUser(null);
     notify('Successfully signed out.', 'info');
@@ -511,9 +570,9 @@ export default function App() {
       setNewRouteLabel('');
       // Update local storage cache
       try {
-        const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+        const deletedIds = safeJsonParse(safeStorage.getItem('campusride_deleted_route_ids'), []);
         const updatedDeleted = deletedIds.filter(id => id !== data.id);
-        localStorage.setItem('campusride_deleted_route_ids', JSON.stringify(updatedDeleted));
+        safeStorage.setItem('campusride_deleted_route_ids', JSON.stringify(updatedDeleted));
       } catch (e) {}
       refreshDashboard();
     } catch (err) {
@@ -582,16 +641,16 @@ export default function App() {
     const updatedRoutes = savedRoutes.filter((r) => r.id !== routeId);
     setSavedRoutes(updatedRoutes);
 
-    // 2. Persist in localStorage and update deleted tombstones
+    // 2. Persist in safeStorage and update deleted tombstones
     try {
-      localStorage.setItem('campusride_saved_routes', JSON.stringify(updatedRoutes));
-      const deletedIds = JSON.parse(localStorage.getItem('campusride_deleted_route_ids') || '[]');
+      safeStorage.setItem('campusride_saved_routes', JSON.stringify(updatedRoutes));
+      const deletedIds = safeJsonParse(safeStorage.getItem('campusride_deleted_route_ids'), []);
       if (!deletedIds.includes(routeId)) {
         deletedIds.push(routeId);
-        localStorage.setItem('campusride_deleted_route_ids', JSON.stringify(deletedIds));
+        safeStorage.setItem('campusride_deleted_route_ids', JSON.stringify(deletedIds));
       }
     } catch (err) {
-      console.error('Error saving deleted route to localStorage:', err);
+      console.error('Error saving deleted route to safeStorage:', err);
     }
 
     notify('Saved commute corridor removed.');
@@ -623,11 +682,11 @@ export default function App() {
       <AuthView
         apiBase={API_BASE}
         onAuthSuccess={(data) => {
-          localStorage.setItem('campusride_jwt', data.access_token);
-          localStorage.setItem('campusride_user', JSON.stringify(data.user));
+          safeStorage.setItem('campusride_jwt', data.access_token);
+          safeStorage.setItem('campusride_user', JSON.stringify(data.user));
           setToken(data.access_token);
           setCurrentUser(data.user);
-          notify(`Welcome to CampusRide, ${data.user.full_name}! Verified @college.edu.in account active.`);
+          notify(`Welcome to CampusRide, ${data.user?.full_name || 'Student'}! Verified @college.edu.in account active.`);
         }}
       />
     );
@@ -636,10 +695,11 @@ export default function App() {
   // =========================================================================
   // SCREENS 2 & 3: MAIN COMMUTE DASHBOARD
   // =========================================================================
-  // Filtered rides based on selected hub
-  const filteredRides = activeRides.filter((ride) => {
+  // Filtered rides based on selected hub with safe array fallback
+  const filteredRides = (activeRides || []).filter((ride) => {
+    if (!ride) return false;
     if (selectedHubFilter === 'All Hubs') return true;
-    return (ride.origin_zone || '').toLowerCase().includes(selectedHubFilter.toLowerCase());
+    return (ride.origin_zone || '').toLowerCase().includes((selectedHubFilter || '').toLowerCase());
   });
 
   return (
@@ -708,14 +768,14 @@ export default function App() {
             {/* Student Profile Identity Badge with Academic Trust Cue */}
             <div className="flex-1 md:flex-none flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 max-w-[180px] xs:max-w-[220px] sm:max-w-[260px] shadow-sm">
               <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-[11px] shrink-0">
-                {currentUser.full_name?.charAt(0) || 'U'}
+                {currentUser?.full_name?.charAt(0) || 'U'}
               </div>
               <div className="min-w-0 truncate">
                 <span className="font-semibold text-slate-900 dark:text-white block truncate leading-tight">
-                  {currentUser.full_name}
+                  {currentUser?.full_name || 'Student'}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-zinc-400 block truncate leading-tight mt-0.5">
-                  {getStudentAcademicTag(currentUser.full_name, currentUser.college_email)}
+                  {getStudentAcademicTag(currentUser?.full_name, currentUser?.college_email)}
                 </span>
               </div>
             </div>
@@ -961,6 +1021,10 @@ export default function App() {
               ) : (
                 <div className="space-y-3.5">
                   {filteredRides.map((ride) => {
+                    if (!ride) return null;
+                    const driver = ride.driver || {};
+                    const driverName = driver.full_name || 'Student Driver';
+                    const driverEmail = driver.college_email || (ride.id ? `driver-${ride.id}@college.edu.in` : '');
                     const waypoints = getCorridorWaypoints(ride.origin_zone);
                     const isLalKuan = (ride.origin_zone || '').toLowerCase().includes('lal kuan');
                     const isRadarMatched = radarMatchedCorridor && (ride.origin_zone || '').toLowerCase().includes(radarMatchedCorridor.toLowerCase());
@@ -978,11 +1042,11 @@ export default function App() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center font-bold text-sm text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
-                              {ride.driver.full_name.charAt(0)}
+                              {driverName.charAt(0) || 'D'}
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">{ride.driver.full_name}</span>
+                                <span className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">{driverName}</span>
                                 <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-medium whitespace-nowrap shrink-0">
                                   <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
                                   Verified @college.edu.in
@@ -995,7 +1059,7 @@ export default function App() {
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
-                                <span className="truncate">{getStudentAcademicTag(ride.driver.full_name, ride.driver.college_email || ride.id)}</span>
+                                <span className="truncate">{getStudentAcademicTag(driverName, driverEmail)}</span>
                                 <span className="text-slate-300 dark:text-zinc-700">•</span>
                                 <span>{ride.vehicle_type === 'two_wheeler' ? 'Motorcycle' : 'Car'}</span>
                                 <span className="text-slate-300 dark:text-zinc-700">•</span>
@@ -1007,7 +1071,7 @@ export default function App() {
                           <div className="text-left sm:text-right shrink-0 flex items-baseline sm:block gap-1.5">
                             <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-wider block font-medium">Available</span>
                             <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">
-                              {ride.seats_available} <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">/ {ride.seats_total} seats</span>
+                              {ride.seats_available || 0} <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">/ {ride.seats_total || 0} seats</span>
                             </span>
                           </div>
                         </div>
@@ -1055,13 +1119,13 @@ export default function App() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px]">
                             <span className="bg-slate-100/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-slate-700 dark:text-zinc-300 flex items-center gap-1 font-mono whitespace-nowrap">
-                              <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> Dep: {ride.departure_time}
+                              <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> Dep: {ride.departure_time || '08:30 AM'}
                             </span>
                             <span className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1 rounded-lg text-emerald-700 dark:text-emerald-300 flex items-center gap-1 font-mono font-semibold whitespace-nowrap">
-                              <TrendingUp className="w-3 h-3 text-emerald-500 shrink-0" /> ETA: {ride.predicted_eta_mins}m
+                              <TrendingUp className="w-3 h-3 text-emerald-500 shrink-0" /> ETA: {ride.predicted_eta_mins || 25}m
                             </span>
                             <span className="bg-slate-100/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-slate-700 dark:text-zinc-300 flex items-center gap-1 font-mono whitespace-nowrap">
-                              <Navigation className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> {ride.distance_km} km
+                              <Navigation className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> {ride.distance_km || 12} km
                             </span>
                             <span className="bg-slate-100/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-slate-700 dark:text-zinc-300 whitespace-nowrap font-medium text-[10px]">
                               {isLalKuan ? (
@@ -1074,12 +1138,12 @@ export default function App() {
 
                           <button
                             onClick={() => handleBookSeat(ride.id)}
-                            disabled={ride.seats_available <= 0 || ride.driver.id === currentUser.id}
+                            disabled={(ride.seats_available || 0) <= 0 || driver.id === currentUser?.id}
                             className="w-full sm:w-auto min-h-[44px] flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-zinc-800 disabled:text-slate-400 dark:disabled:text-zinc-500 disabled:border-slate-300 dark:disabled:border-zinc-700 active:scale-[0.98] cursor-pointer whitespace-nowrap"
                           >
-                            {ride.driver.id === currentUser.id ? (
+                            {driver.id === currentUser?.id ? (
                               'Your Posted Ride'
-                            ) : ride.seats_available <= 0 ? (
+                            ) : (ride.seats_available || 0) <= 0 ? (
                               'Full (0 Seats)'
                             ) : (
                               'Book 1 Seat'
@@ -1104,23 +1168,28 @@ export default function App() {
                   <p className="text-xs text-slate-500 dark:text-zinc-400 py-4 text-center">No active bookings. Select a ride to confirm your seat.</p>
                 ) : (
                   <div className="space-y-2.5">
-                    {myBookings.map((b) => (
-                      <div key={b.booking_id} className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 p-3.5 rounded-xl text-xs">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <ShieldCheck className="w-3.5 h-3.5" /> Confirmed
-                          </span>
-                          <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">{b.ride.departure_time}</span>
+                    {myBookings.map((b) => {
+                      if (!b) return null;
+                      const bRide = b.ride || {};
+                      const bDriver = bRide.driver || {};
+                      return (
+                        <div key={b.booking_id || Math.random()} className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 p-3.5 rounded-xl text-xs">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <ShieldCheck className="w-3.5 h-3.5" /> Confirmed
+                            </span>
+                            <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">{bRide.departure_time || '08:30 AM'}</span>
+                          </div>
+                          <div className="text-slate-900 dark:text-white font-medium truncate mb-1">
+                            {bRide.origin_zone || 'Campus Hub'} ➔ {bRide.destination_gate || 'Main Campus Gate'}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 mt-2 border-t border-slate-200/60 dark:border-zinc-800/60 pt-2">
+                            <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
+                            <span className="truncate">Driver: {bDriver.full_name || 'Campus Commuter'} ({bDriver.phone || 'Verified Student'})</span>
+                          </div>
                         </div>
-                        <div className="text-slate-900 dark:text-white font-medium truncate mb-1">
-                          {b.ride.origin_zone} ➔ {b.ride.destination_gate}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 mt-2 border-t border-slate-200/60 dark:border-zinc-800/60 pt-2">
-                          <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
-                          <span className="truncate">Driver: {b.ride.driver.full_name} ({b.ride.driver.phone || 'Campus Commuter'})</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {/* Passenger Live Tracking Map for Active Bookings (Desktop/Tablet multi-instance; hidden on mobile to enforce single map view) */}
                     <div className="hidden md:block relative z-0 mt-4 pt-3 border-t border-slate-200/60 dark:border-zinc-800/60 space-y-2">
@@ -1277,62 +1346,69 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-3.5">
-                  {myPostedRides.map((ride) => (
-                    <div key={ride.id} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
-                      <div className="flex flex-wrap justify-between items-start gap-2">
-                        <div>
-                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                            <span>{ride.origin_zone}</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span>{ride.destination_gate}</span>
+                  {(myPostedRides || []).map((ride) => {
+                    if (!ride) return null;
+                    const bookings = Array.isArray(ride.passenger_bookings) ? ride.passenger_bookings : [];
+                    return (
+                      <div key={ride.id || Math.random()} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
+                        <div className="flex flex-wrap justify-between items-start gap-2">
+                          <div>
+                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                              <span>{ride.origin_zone || 'Campus Hub'}</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <span>{ride.destination_gate || 'Campus Gate'}</span>
+                            </div>
+                            <span className="text-xs text-slate-500 dark:text-zinc-400 block mt-0.5 font-mono">
+                              Departure: {ride.departure_time || '08:30 AM'} • AutoML ETA: {ride.predicted_eta_mins || 25} mins
+                            </span>
                           </div>
-                          <span className="text-xs text-slate-500 dark:text-zinc-400 block mt-0.5 font-mono">
-                            Departure: {ride.departure_time} • AutoML ETA: {ride.predicted_eta_mins} mins
-                          </span>
+                          <div className="text-right">
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold font-mono whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full">
+                              {ride.seats_available || 0} of {ride.seats_total || 0} seats free
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold font-mono whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full">
-                            {ride.seats_available} of {ride.seats_total} seats free
-                          </span>
-                        </div>
-                      </div>
 
-                      {/* Passenger Bookings Table */}
-                      <div className="bg-slate-50/80 dark:bg-zinc-900/60 rounded-xl p-3.5 border border-slate-200/70 dark:border-zinc-800/70 overflow-x-auto">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-2">
-                          Booked Passengers ({ride.passenger_bookings?.length || 0}):
-                        </span>
-                        {(!ride.passenger_bookings || ride.passenger_bookings.length === 0) ? (
-                          <span className="text-xs text-slate-500 dark:text-zinc-500 italic">No students booked yet. Seats open in feed.</span>
-                        ) : (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs min-w-[280px]">
-                              <thead>
-                                <tr className="border-b border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 text-[10px] uppercase font-medium">
-                                  <th className="pb-2">Passenger Name</th>
-                                  <th className="pb-2">College Email</th>
-                                  <th className="pb-2 text-right">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-                                {ride.passenger_bookings.map((p) => (
-                                  <tr key={p.booking_id}>
-                                    <td className="py-2 font-semibold text-slate-900 dark:text-white truncate max-w-[120px]">{p.rider_name}</td>
-                                    <td className="py-2 text-slate-500 dark:text-zinc-400 font-mono text-[11px] truncate max-w-[140px]">{p.rider_email}</td>
-                                    <td className="py-2 text-right">
-                                      <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap">
-                                        Confirmed
-                                      </span>
-                                    </td>
+                        {/* Passenger Bookings Table */}
+                        <div className="bg-slate-50/80 dark:bg-zinc-900/60 rounded-xl p-3.5 border border-slate-200/70 dark:border-zinc-800/70 overflow-x-auto">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-2">
+                            Booked Passengers ({bookings.length}):
+                          </span>
+                          {bookings.length === 0 ? (
+                            <span className="text-xs text-slate-500 dark:text-zinc-500 italic">No students booked yet. Seats open in feed.</span>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs min-w-[280px]">
+                                <thead>
+                                  <tr className="border-b border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 text-[10px] uppercase font-medium">
+                                    <th className="pb-2">Passenger Name</th>
+                                    <th className="pb-2">College Email</th>
+                                    <th className="pb-2 text-right">Status</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                                  {bookings.map((p) => {
+                                    if (!p) return null;
+                                    return (
+                                      <tr key={p.booking_id || Math.random()}>
+                                        <td className="py-2 font-semibold text-slate-900 dark:text-white truncate max-w-[120px]">{p.rider_name || 'Student Commuter'}</td>
+                                        <td className="py-2 text-slate-500 dark:text-zinc-400 font-mono text-[11px] truncate max-w-[140px]">{p.rider_email || '@college.edu.in'}</td>
+                                        <td className="py-2 text-right">
+                                          <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap">
+                                            Confirmed
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

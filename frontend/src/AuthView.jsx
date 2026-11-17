@@ -2,10 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Sun, Moon, AlertCircle, CheckCircle2, Eye, EyeOff, ShieldCheck, ArrowRight, User, Mail, Lock, Car, Tag } from 'lucide-react';
 
 export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
-  // Theme state: 'light' | 'dark'
+  // Theme state: 'light' | 'dark' with safe mobile checks
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('campusride_theme') || 
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = window.localStorage?.getItem('campusride_theme');
+        if (stored) return stored;
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+      }
+    } catch {
+      // Safe fallback if localStorage or matchMedia is restricted
+    }
+    return 'light';
   });
 
   // Tab State: 'signin' | 'signup'
@@ -23,15 +33,23 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
   const [statusState, setStatusState] = useState({ type: null, message: '' });
   const [loading, setLoading] = useState(false);
 
-  // Sync theme to document element
+  // Sync theme to document element safely
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    try {
+      if (typeof document !== 'undefined') {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+      }
+      if (typeof window !== 'undefined') {
+        window.localStorage?.setItem('campusride_theme', theme);
+      }
+    } catch {
+      // Ignore localStorage write restrictions
     }
-    localStorage.setItem('campusride_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

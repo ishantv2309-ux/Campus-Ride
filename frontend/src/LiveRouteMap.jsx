@@ -86,26 +86,38 @@ export const COMMUTER_HUBS = [
   },
 ];
 
-// Haversine distance helper
+// Haversine distance helper with safe null/undefined guards
 export function calculateDistance(lat1, lon1, lat2, lon2) {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return '0.0';
+  const nLat1 = Number(lat1);
+  const nLon1 = Number(lon1);
+  const nLat2 = Number(lat2);
+  const nLon2 = Number(lon2);
+  if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return '0.0';
+
   const R = 6371; // Earth radius in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const dLat = (nLat2 - nLat1) * (Math.PI / 180);
+  const dLon = (nLon2 - nLon1) * (Math.PI / 180);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos(nLat1 * (Math.PI / 180)) * Math.cos(nLat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return (R * c).toFixed(1);
 }
 
-// Find nearest commuter hub from given coordinates
+// Find nearest commuter hub from given coordinates with safe fallback
 export function getNearestHub(lat, lng) {
-  if (!lat || !lng) return null;
+  if (lat == null || lng == null) return null;
+  const nLat = Number(lat);
+  const nLng = Number(lng);
+  if (isNaN(nLat) || isNaN(nLng)) return null;
+
   let minD = Infinity;
   let closest = null;
-  for (const hub of COMMUTER_HUBS) {
-    const d = parseFloat(calculateDistance(lat, lng, hub.lat, hub.lng));
-    if (d < minD) {
+  for (const hub of (COMMUTER_HUBS || [])) {
+    if (!hub || typeof hub.lat !== 'number' || typeof hub.lng !== 'number') continue;
+    const d = parseFloat(calculateDistance(nLat, nLng, hub.lat, hub.lng));
+    if (!isNaN(d) && d < minD) {
       minD = d;
       closest = { ...hub, distanceToUser: d };
     }
@@ -174,12 +186,16 @@ function getMarkerIcon(type, title, isSelected = false) {
   });
 }
 
-// Controller component to smoothly pan/zoom map on changes
+// Controller component to smoothly pan/zoom map on changes with try/catch
 function MapViewUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
-    if (center && center[0] && center[1]) {
-      map.flyTo(center, zoom, { duration: 1.2 });
+    try {
+      if (center && typeof center[0] === 'number' && !isNaN(center[0]) && typeof center[1] === 'number' && !isNaN(center[1])) {
+        map.flyTo(center, zoom || 11, { duration: 1.2 });
+      }
+    } catch (e) {
+      console.warn('Map flyTo safe catch:', e);
     }
   }, [center, zoom, map]);
   return null;
@@ -199,12 +215,12 @@ export default function LiveRouteMap({
   // Determine active hub
   const activeHub = useMemo(() => {
     if (!activeHubFilter || activeHubFilter === 'All Hubs') return null;
-    return COMMUTER_HUBS.find((h) => h.name.toLowerCase() === activeHubFilter.toLowerCase()) || null;
+    return (COMMUTER_HUBS || []).find((h) => h?.name?.toLowerCase() === activeHubFilter.toLowerCase()) || null;
   }, [activeHubFilter]);
 
   // Center coordinate
   const mapCenter = useMemo(() => {
-    if (activeHub) {
+    if (activeHub && typeof activeHub.lat === 'number' && !isNaN(activeHub.lat) && typeof activeHub.lng === 'number' && !isNaN(activeHub.lng)) {
       return [activeHub.lat, activeHub.lng];
     }
     // Midpoint between NCR hubs and KCC Institute
@@ -215,12 +231,17 @@ export default function LiveRouteMap({
 
   // Compute nearest hub from user's GPS
   const nearestHub = useMemo(() => {
-    if (!userLocation?.lat || !userLocation?.lng) return null;
+    if (userLocation?.lat == null || userLocation?.lng == null) return null;
+    const nLat = Number(userLocation.lat);
+    const nLng = Number(userLocation.lng);
+    if (isNaN(nLat) || isNaN(nLng)) return null;
+
     let minD = Infinity;
     let closest = null;
-    COMMUTER_HUBS.forEach((h) => {
-      const d = parseFloat(calculateDistance(userLocation.lat, userLocation.lng, h.lat, h.lng));
-      if (d < minD) {
+    (COMMUTER_HUBS || []).forEach((h) => {
+      if (!h || typeof h.lat !== 'number' || typeof h.lng !== 'number') return;
+      const d = parseFloat(calculateDistance(nLat, nLng, h.lat, h.lng));
+      if (!isNaN(d) && d < minD) {
         minD = d;
         closest = { ...h, distanceToUser: d };
       }
@@ -329,7 +350,7 @@ export default function LiveRouteMap({
           </Marker>
 
           {/* User Current Location Marker */}
-          {userLocation?.lat && userLocation?.lng && (
+          {typeof userLocation?.lat === 'number' && !isNaN(userLocation.lat) && typeof userLocation?.lng === 'number' && !isNaN(userLocation.lng) && (
             <Marker
               position={[userLocation.lat, userLocation.lng]}
               icon={getMarkerIcon('user', 'You')}
@@ -338,7 +359,7 @@ export default function LiveRouteMap({
                 <div className="space-y-1 p-1">
                   <span className="font-bold text-sky-600 block text-xs">📍 Your GPS Location</span>
                   <span className="text-[10px] text-slate-600 block">
-                    Lat: {userLocation.lat.toFixed(4)}, Lng: {userLocation.lng.toFixed(4)}
+                    Lat: {Number(userLocation.lat).toFixed(4)}, Lng: {Number(userLocation.lng).toFixed(4)}
                   </span>
                   <span className="text-[10px] text-slate-500 block">
                     Accuracy: ±{Math.round(userLocation.accuracy || 10)} meters
