@@ -240,18 +240,18 @@ export default function LiveRouteMap({
       </div>
 
       {/* Floating Top-Right Controls */}
-      <div className="absolute top-3 right-3 z-20 pointer-events-auto flex items-center gap-1.5">
+      <div className="absolute top-3 right-3 z-20 pointer-events-auto flex items-center gap-1.5 max-w-[55%] sm:max-w-none justify-end">
         {userLocation ? (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-emerald-300/80 dark:border-emerald-700/80 px-3 py-1.5 rounded-full font-medium shadow-md">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-emerald-300/80 dark:border-emerald-700/80 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium shadow-md min-w-0">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span>GPS Active (±{Math.round(userLocation.accuracy || 10)}m)</span>
+            <span className="truncate">GPS Active (±{Math.round(userLocation.accuracy || 10)}m)</span>
           </div>
         ) : locationError ? (
           <button
             type="button"
             onClick={onRequestLocation}
             title={locationError}
-            className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-amber-300/80 dark:border-amber-700/80 px-3 py-1.5 rounded-full font-medium shadow-md cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40"
+            className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-amber-300/80 dark:border-amber-700/80 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium shadow-md cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40 shrink-0"
           >
             <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
             <span>Retry GPS</span>
@@ -261,7 +261,7 @@ export default function LiveRouteMap({
             type="button"
             onClick={onRequestLocation}
             disabled={isLocating}
-            className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 hover:border-emerald-500 px-3 py-1.5 rounded-full font-medium shadow-md transition-all cursor-pointer active:scale-[0.98]"
+            className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 hover:border-emerald-500 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium shadow-md transition-all cursor-pointer active:scale-[0.98] shrink-0"
           >
             <Compass className={`w-3.5 h-3.5 text-emerald-500 shrink-0 ${isLocating ? 'animate-spin' : ''}`} />
             <span>{isLocating ? 'Locating...' : 'Enable GPS'}</span>
@@ -271,7 +271,7 @@ export default function LiveRouteMap({
         <button
           type="button"
           onClick={() => onSelectHub && onSelectHub('All Hubs')}
-          className="text-xs text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-full font-medium shadow-md transition-all cursor-pointer active:scale-[0.98]"
+          className="text-xs text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full font-medium shadow-md transition-all cursor-pointer active:scale-[0.98] shrink-0"
         >
           Reset
         </button>
@@ -280,10 +280,10 @@ export default function LiveRouteMap({
       {/* Floating Bottom Telemetry Banner (when available) */}
       {userLocation && nearestHub && (
         <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 z-20 pointer-events-auto">
-          <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-2 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-sky-200/90 dark:border-sky-800/80 shadow-lg text-xs font-sans text-sky-950 dark:text-sky-200 max-w-md">
+          <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-1.5 sm:py-2 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-sky-200/90 dark:border-sky-800/80 shadow-lg text-xs font-sans text-sky-950 dark:text-sky-200 max-w-full sm:max-w-md">
             <div className="flex items-center gap-1.5 truncate">
               <MapPin className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-              <span>Nearest: <strong>{nearestHub.fullTitle}</strong> (~{nearestHub.distanceToUser} km)</span>
+              <span className="truncate">Nearest: <strong>{nearestHub.fullTitle}</strong> (~{nearestHub.distanceToUser} km)</span>
             </div>
             <span className="text-[11px] text-sky-700 dark:text-sky-400 font-mono">
               • Direct: ~{calculateDistance(userLocation.lat, userLocation.lng, KCC_DESTINATION.lat, KCC_DESTINATION.lng)} km
@@ -293,7 +293,7 @@ export default function LiveRouteMap({
       )}
 
       {/* Leaflet Map Surface */}
-      <div className={`w-full relative z-0 ${compact ? 'h-56 sm:h-64' : 'h-72 sm:h-84'}`}>
+      <div className={`w-full relative z-0 ${compact ? 'h-[200px] md:h-[260px]' : 'h-[260px] md:h-[360px]'}`}>
         <MapContainer
           center={mapCenter}
           zoom={mapZoom}

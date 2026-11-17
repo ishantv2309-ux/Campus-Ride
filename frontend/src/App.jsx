@@ -128,30 +128,44 @@ export default function App() {
 
   // Intelligently detect nearest pickup hub from GPS coordinates
   useEffect(() => {
-    if (userLocation?.lat && userLocation?.lng) {
-      const nearest = getNearestHub(userLocation.lat, userLocation.lng);
-      if (nearest?.name) {
-        setDetectedAutoHub(nearest.name);
-        if (!userManuallyChangedHubRef.current) {
-          setSelectedHubFilter(nearest.name);
+    try {
+      if (userLocation?.lat && userLocation?.lng) {
+        const nearest = getNearestHub(userLocation.lat, userLocation.lng);
+        if (nearest?.name) {
+          setDetectedAutoHub(nearest.name);
+          if (!userManuallyChangedHubRef.current) {
+            setSelectedHubFilter(nearest.name);
+          }
         }
       }
+    } catch (err) {
+      console.warn('Safe GPS detection fallback triggered:', err);
     }
   }, [userLocation]);
 
-  // Fallback to user's primary configured commuter corridor if GPS is not yet loaded
+  // Fallback to user's primary configured commuter corridor or default corridor (Noida 62) if GPS is unavailable
   useEffect(() => {
-    if (!userLocation && savedRoutes?.length > 0 && !userManuallyChangedHubRef.current) {
-      const primaryOrigin = savedRoutes[0]?.origin_zone;
-      if (primaryOrigin) {
-        const match = ['Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].find(
-          h => primaryOrigin.toLowerCase().includes(h.toLowerCase())
-        );
-        if (match) {
-          setDetectedAutoHub(match);
-          setSelectedHubFilter(match);
+    try {
+      if (!userLocation && !userManuallyChangedHubRef.current) {
+        if (savedRoutes?.length > 0) {
+          const primaryOrigin = savedRoutes[0]?.origin_zone;
+          if (primaryOrigin) {
+            const match = ['Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].find(
+              h => primaryOrigin.toLowerCase().includes(h.toLowerCase())
+            );
+            if (match) {
+              setDetectedAutoHub(match);
+              setSelectedHubFilter(match);
+              return;
+            }
+          }
         }
+        // Deterministic default corridor fallback when geolocation is blocked
+        setDetectedAutoHub(prev => prev || 'Noida 62');
+        setSelectedHubFilter(prev => prev || 'Noida 62');
       }
+    } catch (err) {
+      console.warn('Safe corridor fallback triggered:', err);
     }
   }, [savedRoutes, userLocation]);
 
@@ -403,8 +417,18 @@ export default function App() {
         },
         body: JSON.stringify({ ride_id: rideId })
       });
+      if (!res.ok) {
+        let errDetail = 'Booking failed';
+        try {
+          const errData = await res.json();
+          errDetail = errData.detail || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
+        } catch {
+          const rawText = await res.text();
+          if (rawText) errDetail = rawText;
+        }
+        throw new Error(errDetail);
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Booking failed');
 
       notify(`Seat Confirmed! Driver ${data.driver_name} notified. Remaining seats: ${data.seats_remaining}`);
       refreshDashboard();
@@ -426,16 +450,31 @@ export default function App() {
         },
         body: JSON.stringify({
           origin_zone: postOrigin,
+          origin: postOrigin,
           destination_gate: postGate,
+          destination: postGate,
           departure_time: postTime,
-          seats_total: parseInt(postSeats),
+          seats_total: parseInt(postSeats) || 1,
+          seats_available: parseInt(postSeats) || 1,
           vehicle_type: postVehicle,
-          notes: postNotes
+          notes: postNotes,
+          pickup_notes: postNotes
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Failed to post ride');
 
+      if (!res.ok) {
+        let errDetail = 'Failed to post ride';
+        try {
+          const errData = await res.json();
+          errDetail = errData.detail || errData.message || (typeof errData === 'string' ? errData : JSON.stringify(errData));
+        } catch {
+          const rawText = await res.text();
+          if (rawText) errDetail = rawText;
+        }
+        throw new Error(errDetail);
+      }
+
+      const data = await res.json();
       notify(`Ride published! Connected AutoML estimated ETA: ${data.ride.predicted_eta_mins} mins.`);
       setPostNotes('');
       refreshDashboard();
@@ -621,51 +660,53 @@ export default function App() {
 
       {/* Top Header: Campus Navigation & Student Trust Console */}
       <header className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 sticky top-0 z-40 transition-colors w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm">
-              CR
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white font-sans">
-                  CAMPUS<span className="text-emerald-500">RIDE</span>
-                </span>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
-                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                  KCC Verified
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4">
+          <div className="flex items-center justify-between md:justify-start gap-2.5 sm:gap-3 min-w-0 w-full md:w-auto">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm">
+                CR
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white font-sans">
+                    CAMPUS<span className="text-emerald-500">RIDE</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
+                    <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
+                    KCC Verified
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 dark:text-zinc-400 block truncate max-w-[200px] xs:max-w-[260px] sm:max-w-none">
+                  KCC Institute of Technology & Management • Knowledge Park II
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500 dark:text-zinc-400 block truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
-                KCC Institute of Technology & Management • Knowledge Park II
-              </span>
             </div>
           </div>
 
           {/* User Status Bar & Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center justify-between md:justify-end gap-1.5 sm:gap-2.5 w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t border-slate-100 dark:border-zinc-800/50 md:border-t-0">
             {/* Tactile Theme Toggle */}
             <button
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-xs font-semibold uppercase tracking-wider bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-200 rounded-full active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-xs font-semibold uppercase tracking-wider bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-200 rounded-full active:scale-[0.98] transition-all cursor-pointer shadow-sm shrink-0"
             >
               {theme === 'dark' ? (
                 <>
                   <Sun key="sun-icon" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon shrink-0" />
-                  <span className="hidden sm:inline text-[11px] font-mono">LIGHT</span>
+                  <span className="text-[11px] font-mono">LIGHT</span>
                 </>
               ) : (
                 <>
                   <Moon key="moon-icon" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon shrink-0" />
-                  <span className="hidden sm:inline text-[11px] font-mono">DARK</span>
+                  <span className="text-[11px] font-mono">DARK</span>
                 </>
               )}
             </button>
 
             {/* Student Profile Identity Badge with Academic Trust Cue */}
-            <div className="flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs max-w-[130px] xs:max-w-[180px] sm:max-w-[260px] shadow-sm">
+            <div className="flex-1 md:flex-none flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 max-w-[180px] xs:max-w-[220px] sm:max-w-[260px] shadow-sm">
               <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-[11px] shrink-0">
                 {currentUser.full_name?.charAt(0) || 'U'}
               </div>
@@ -683,7 +724,7 @@ export default function App() {
               onClick={handleLogout}
               title="Sign Out"
               aria-label="Sign Out"
-              className="p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-slate-200/80 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-700 text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+              className="p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-slate-200/80 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-700 text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300 active:scale-[0.98] transition-all cursor-pointer shadow-sm shrink-0"
             >
               <LogOut className="w-4 h-4 shrink-0" />
             </button>
@@ -693,14 +734,14 @@ export default function App() {
 
       {/* Sub-Header & Sleek Pill-Segmented Mode Navigation */}
       <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
           {/* Mode Switcher: Sleek Pill-Segmented Control */}
-          <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
-            <div className="inline-flex p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
+          <div className="flex-1 min-w-0 overflow-x-auto whitespace-nowrap scrollbar-none py-0.5">
+            <div className="inline-flex w-full md:w-auto p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
               <button
                 type="button"
                 onClick={() => setActiveTab('rider')}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 md:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'rider'
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -712,7 +753,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveTab('driver')}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 md:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'driver'
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -724,7 +765,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveTab('matcher')}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
+                className={`flex-1 md:flex-none justify-center px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'matcher'
                     ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm shadow-emerald-500/20'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
@@ -736,7 +777,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center gap-2">
+          <div className="shrink-0 flex items-center justify-end gap-2">
             <button
               onClick={refreshDashboard}
               title="Refresh Live State"
@@ -775,22 +816,22 @@ export default function App() {
               No saved routes yet. Add your daily home commute corridor for 1-click autofill.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {savedRoutes.map((route) => (
                 <div
                   key={route.id}
                   className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 p-3.5 rounded-xl flex flex-col justify-between transition-all"
                 >
                   <div>
-                    <div className="font-semibold text-xs text-slate-900 dark:text-white mb-1.5 flex items-center justify-between">
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white mb-1.5 flex items-center justify-between gap-2">
                       <span className="truncate">{route.route_label}</span>
                       <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-bold shrink-0">{route.preferred_time}</span>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1 truncate mb-2">
                       <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="font-medium text-slate-700 dark:text-zinc-300">{route.origin_zone}</span>
+                      <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{route.origin_zone}</span>
                       <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-zinc-600" />
-                      <span className="text-slate-600 dark:text-zinc-400">{route.campus_gate}</span>
+                      <span className="text-slate-600 dark:text-zinc-400 truncate">{route.campus_gate}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60 dark:border-zinc-800/80">
@@ -798,7 +839,7 @@ export default function App() {
                       type="button"
                       disabled={scanningRouteId === route.id}
                       onClick={() => handleUseSavedRoute(route)}
-                      className={`flex-1 text-xs font-semibold py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                      className={`flex-1 text-xs font-semibold py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] min-w-0 ${
                         scanningRouteId === route.id
                           ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-400 dark:border-emerald-600 animate-pulse cursor-wait'
                           : 'bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-zinc-700 shadow-sm cursor-pointer'
@@ -812,7 +853,7 @@ export default function App() {
                       ) : (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span>Apply Route</span>
+                          <span className="truncate">Apply Route</span>
                         </>
                       )}
                     </button>
@@ -822,7 +863,7 @@ export default function App() {
                       onClick={(e) => handleDeleteSavedRoute(route.id, e)}
                       title="Remove saved corridor"
                       aria-label="Remove saved corridor"
-                      className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-800 text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-sm"
+                      className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-800 text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-sm shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                       <span>Remove</span>
@@ -878,8 +919,8 @@ export default function App() {
                 </div>
               )}
 
-              {/* Hub Quick-Filter Bar - Swipable on mobile with sleek pill styling */}
-              <div className="bg-white/80 dark:bg-[#121215]/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar text-xs shadow-sm">
+              {/* Hub Quick-Filter Bar - Horizontally scrollable on mobile with sleek pill styling */}
+              <div className="bg-white/80 dark:bg-[#121215]/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none text-xs shadow-sm w-full min-w-0">
                 <span className="text-slate-500 dark:text-zinc-400 text-[11px] font-medium uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1 pl-1">
                   <Filter className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Hubs:
                 </span>
@@ -934,27 +975,27 @@ export default function App() {
                         }`}
                       >
                         {/* Driver & Status Header with Academic Trust Cues */}
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center font-bold text-sm text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
                               {ride.driver.full_name.charAt(0)}
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">{ride.driver.full_name}</span>
-                                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+                                <span className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">{ride.driver.full_name}</span>
+                                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-medium whitespace-nowrap shrink-0">
                                   <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
                                   Verified @college.edu.in
                                 </span>
                                 {isRadarMatched && (
-                                  <span className="text-[10px] bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm animate-pulse">
+                                  <span className="text-[10px] bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm animate-pulse shrink-0">
                                     <Radio className="w-2.5 h-2.5 shrink-0" />
                                     Matched Corridor
                                   </span>
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
-                                <span>{getStudentAcademicTag(ride.driver.full_name, ride.driver.college_email || ride.id)}</span>
+                                <span className="truncate">{getStudentAcademicTag(ride.driver.full_name, ride.driver.college_email || ride.id)}</span>
                                 <span className="text-slate-300 dark:text-zinc-700">•</span>
                                 <span>{ride.vehicle_type === 'two_wheeler' ? 'Motorcycle' : 'Car'}</span>
                                 <span className="text-slate-300 dark:text-zinc-700">•</span>
@@ -963,7 +1004,7 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="text-right shrink-0">
+                          <div className="text-left sm:text-right shrink-0 flex items-baseline sm:block gap-1.5">
                             <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-wider block font-medium">Available</span>
                             <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">
                               {ride.seats_available} <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">/ {ride.seats_total} seats</span>

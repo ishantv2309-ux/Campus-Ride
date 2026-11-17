@@ -329,5 +329,52 @@ def test_predict_route_kcc_automl():
     assert "Noida Expressway (Sec 128-142)" in noida_data["optimal_path_nodes"]
     assert noida_data["predicted_eta_mins"] > 0
 
+def test_ride_publishing_flexible_fields_and_two_wheeler_normalization():
+    """Verifies ride publishing accepts flexible field names and vehicle_type string values."""
+    driver_login = client.post("/api/auth/login", json={
+        "college_email": "dev.sharma@college.edu.in",
+        "password": "SecurePassword123"
+    })
+    token = driver_login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Publish ride using frontend alias fields and complex vehicle_type string
+    post_resp = client.post("/api/rides", headers=headers, json={
+        "origin": "Noida 62",
+        "destination": "Main Campus Gate (Admin Block)",
+        "departure_time": "08:45 AM",
+        "seats_available": 2,
+        "vehicle_type": "Two-Wheeler (Motorcycle / Scooty)",
+        "pickup_notes": "Leaving sharp at 8:45 from Sector 62."
+    })
+    assert post_resp.status_code == 201
+    ride_data = post_resp.json()["ride"]
+    assert ride_data["origin_zone"] == "Noida 62"
+    assert ride_data["destination_gate"] == "Main Campus Gate (Admin Block)"
+    assert ride_data["seats_total"] == 2
+    assert ride_data["seats_available"] == 2
+    assert ride_data["vehicle_type"] == "two_wheeler"
+    assert ride_data["notes"] == "Leaving sharp at 8:45 from Sector 62."
+    assert post_resp.json()["ml_inference"]["predicted_eta_mins"] > 0
+
+def test_ride_publishing_validation_error_json():
+    """Verifies that missing required fields return proper JSON HTTPException rather than plain text."""
+    driver_login = client.post("/api/auth/login", json={
+        "college_email": "dev.sharma@college.edu.in",
+        "password": "SecurePassword123"
+    })
+    token = driver_login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Empty origin should return 422 with JSON detail
+    err_resp = client.post("/api/rides", headers=headers, json={
+        "origin": "",
+        "origin_zone": "",
+        "destination": "Main Campus Gate"
+    })
+    assert err_resp.status_code == 422
+    assert "detail" in err_resp.json()
+
+
 
 
