@@ -143,14 +143,16 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
       
       {/* Top Bar: Brand & Light/Dark Mode Toggle */}
       <header className="max-w-md w-full mx-auto flex items-center justify-between pb-4 sm:pb-6">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 shrink-0 bg-slate-100 dark:bg-[#121215] text-emerald-500 flex items-center justify-center font-bold text-xs rounded border border-[#E2E8F0] dark:border-emerald-500/40 font-mono">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs rounded-xl border border-emerald-500/30 font-sans shadow-sm">
             CR
           </div>
           <div className="min-w-0">
-            <span className="font-bold tracking-tight text-sm font-mono text-[#0F172A] dark:text-white uppercase block truncate">Campus<span className="text-emerald-500">Ride</span></span>
-            <span className="text-[10px] block font-mono text-slate-500 dark:text-zinc-400 leading-none mt-0.5 truncate">
-              KCC Institute Student Commute Network
+            <span className="font-bold tracking-tight text-base text-slate-900 dark:text-white block truncate">
+              Campus<span className="text-emerald-500">Ride</span>
+            </span>
+            <span className="text-xs block text-slate-500 dark:text-zinc-400 leading-tight truncate">
+              KCC Institute • Student Commute Network
             </span>
           </div>
         </div>
@@ -160,17 +162,17 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
           type="button"
           onClick={toggleTheme}
           aria-label="Toggle theme"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-xs font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] hover:border-slate-400 dark:hover:border-zinc-700 text-[#0F172A] dark:text-zinc-200 rounded active:scale-[0.98] transition-all cursor-pointer select-none shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-xs font-semibold uppercase tracking-wider bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700 text-slate-900 dark:text-zinc-200 rounded-full active:scale-[0.98] transition-all cursor-pointer select-none shrink-0 shadow-sm"
         >
           {theme === 'dark' ? (
             <>
               <Sun key="sun-icon-auth" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon shrink-0" />
-              <span className="font-mono">LIGHT</span>
+              <span className="font-mono text-[11px]">LIGHT</span>
             </>
           ) : (
             <>
               <Moon key="moon-icon-auth" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon shrink-0" />
-              <span className="font-mono">DARK</span>
+              <span className="font-mono text-[11px]">DARK</span>
             </>
           )}
         </button>
@@ -178,45 +180,47 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
 
       {/* Main Authentication Card */}
       <main className="max-w-md w-full mx-auto my-auto">
-        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] rounded shadow-sm">
+        <div className="bg-white/90 dark:bg-[#121215]/90 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-slate-200/40 dark:shadow-black/60 overflow-hidden">
           
-          {/* Card Header & Tactile Tabs */}
-          <div className="border-b border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090B] grid grid-cols-2 p-1 gap-1 rounded-t">
-            <button
-              type="button"
-              onClick={() => handleTabChange('signin')}
-              className={`py-2 min-h-[38px] text-xs font-mono font-bold uppercase tracking-wider transition-all select-none rounded border active:scale-[0.98] ${
-                activeTab === 'signin'
-                  ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-emerald-400 border-[#E2E8F0] dark:border-emerald-500/50'
-                  : 'bg-transparent text-slate-500 dark:text-zinc-400 border-transparent hover:text-[#0F172A] dark:hover:text-zinc-200'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('signup')}
-              className={`py-2 min-h-[38px] text-xs font-mono font-bold uppercase tracking-wider transition-all select-none rounded border active:scale-[0.98] ${
-                activeTab === 'signup'
-                  ? 'bg-white dark:bg-[#121215] text-[#0F172A] dark:text-emerald-400 border-[#E2E8F0] dark:border-emerald-500/50'
-                  : 'bg-transparent text-slate-500 dark:text-zinc-400 border-transparent hover:text-[#0F172A] dark:hover:text-zinc-200'
-              }`}
-            >
-              Sign Up
-            </button>
+          {/* Card Header & Sleek Segmented Tabs */}
+          <div className="border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/70 dark:bg-zinc-950/50 p-2">
+            <div className="grid grid-cols-2 p-1 gap-1.5 bg-slate-100/90 dark:bg-zinc-900/90 rounded-xl border border-slate-200/60 dark:border-zinc-800 shadow-inner">
+              <button
+                type="button"
+                onClick={() => handleTabChange('signin')}
+                className={`py-2 min-h-[38px] text-xs font-semibold transition-all select-none rounded-lg active:scale-[0.98] ${
+                  activeTab === 'signin'
+                    ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700 font-bold'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange('signup')}
+                className={`py-2 min-h-[38px] text-xs font-semibold transition-all select-none rounded-lg active:scale-[0.98] ${
+                  activeTab === 'signup'
+                    ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700 font-bold'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+                }`}
+              >
+                Register
+              </button>
+            </div>
           </div>
 
-          <div className="p-4 sm:p-7 space-y-4 sm:space-y-5">
+          <div className="p-5 sm:p-7 space-y-4 sm:space-y-5">
             
             {/* Header Text */}
             <div>
-              <h1 className="text-lg font-bold font-mono tracking-tight text-[#0F172A] dark:text-white">
-                {activeTab === 'signin' ? 'Access Student Dispatch' : 'Register Student Commuter'}
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                {activeTab === 'signin' ? 'Welcome Back, Commuter' : 'Register Student Commuter'}
               </h1>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 font-mono">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
                 {activeTab === 'signin'
-                  ? 'Authenticate with your verified @college.edu.in account.'
-                  : 'Connect your verified college identity to match campus rides.'}
+                  ? 'Sign in with your verified KCC Institute credentials.'
+                  : 'Connect your verified college identity to match daily rides.'}
               </p>
             </div>
 
@@ -224,7 +228,7 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
             {statusState.type && (
               <div
                 role="alert"
-                className={`p-3 sm:p-3.5 border text-xs font-mono font-medium flex items-start gap-2.5 rounded transition-all ${
+                className={`p-3.5 border text-xs font-medium flex items-start gap-2.5 rounded-xl transition-all ${
                   statusState.type === 'error'
                     ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800'
                     : 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800'
@@ -240,12 +244,12 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               
               {/* Sign Up: Full Name */}
               {activeTab === 'signup' && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
                     Full Name <span className="text-rose-600">*</span>
                   </label>
                   <div className="relative">
@@ -255,7 +259,7 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
                       placeholder="e.g. Ishant Verma"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full min-h-[42px] bg-slate-50 dark:bg-[#09090B] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] rounded px-3.5 py-2 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                     />
                   </div>
                 </div>
@@ -264,10 +268,10 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
               {/* Email (Both Tabs) */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                  <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200">
                     College Email <span className="text-rose-600">*</span>
                   </label>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 dark:bg-[#09090B] text-slate-600 dark:text-zinc-400 border border-[#E2E8F0] dark:border-[#27272A] rounded">
+                  <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800 rounded-full font-medium">
                     @college.edu.in
                   </span>
                 </div>
@@ -277,20 +281,20 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
                   placeholder="rollnumber@college.edu.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full min-h-[42px] bg-slate-50 dark:bg-[#09090B] border rounded px-3.5 py-2 text-xs font-mono focus:outline-none transition-colors ${
+                  className={`w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-2 transition-all ${
                     hasTypedEmail
                       ? isCollegeEmail
-                        ? 'border-emerald-500 text-[#0F172A] dark:text-[#FAFAFA]'
-                        : 'border-rose-500 text-[#0F172A] dark:text-[#FAFAFA]'
-                      : 'border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] focus:border-emerald-500'
+                        ? 'border-emerald-500 focus:ring-emerald-500/20 text-slate-900 dark:text-white'
+                        : 'border-rose-500 focus:ring-rose-500/20 text-slate-900 dark:text-white'
+                      : 'border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-emerald-500/20'
                   }`}
                 />
-                <div className="flex items-center justify-between mt-1 text-[11px] font-mono">
-                  <span className={hasTypedEmail && !isCollegeEmail ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-500 dark:text-zinc-400'}>
-                    Must terminate in @college.edu.in
+                <div className="flex items-center justify-between mt-1 text-[11px]">
+                  <span className={hasTypedEmail && !isCollegeEmail ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-slate-500 dark:text-zinc-400'}>
+                    Must end with @college.edu.in
                   </span>
                   {hasTypedEmail && (
-                    <span className={isCollegeEmail ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400'}>
+                    <span className={isCollegeEmail ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-medium'}>
                       {isCollegeEmail ? '✓ Domain verified' : '✗ Invalid domain'}
                     </span>
                   )}
@@ -299,7 +303,7 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
 
               {/* Password (Both Tabs) */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200 mb-1.5">
                   Password <span className="text-rose-600">*</span>
                 </label>
                 <div className="relative">
@@ -309,12 +313,12 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-[#09090B] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] rounded px-3.5 py-2 pr-10 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 pr-10 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 p-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 p-1 cursor-pointer"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -343,21 +347,21 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
 
                   {/* Vehicle Brand (Conditional/Optional) */}
                   {vehicleType !== 'None / Rider Only' && (
-                    <div className="p-3 border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090B] rounded">
+                    <div className="p-3 border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/80 rounded-xl">
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                        <label className="block text-xs font-semibold text-slate-800 dark:text-zinc-200">
                           Vehicle Brand
                         </label>
-                        <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400">Optional</span>
+                        <span className="text-[10px] text-slate-500 dark:text-zinc-400">Optional</span>
                       </div>
                       <input
                         type="text"
                         placeholder="e.g. Honda, Yamaha, Maruti, Hyundai"
                         value={vehicleBrand}
                         onChange={(e) => setVehicleBrand(e.target.value)}
-                        className="w-full bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272A] text-[#0F172A] dark:text-[#FAFAFA] rounded px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
+                        className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-950 dark:text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                       />
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block mt-1">
+                      <span className="text-[10px] text-slate-500 dark:text-zinc-400 block mt-1">
                         Helps fellow student passengers recognize your ride at pickup points.
                       </span>
                     </div>
@@ -365,22 +369,22 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
                 </>
               )}
 
-              {/* Tactile Primary Action Button */}
+              {/* Primary Action Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 min-h-[44px] py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase tracking-wider rounded border border-emerald-400 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer select-none"
+                className="w-full mt-3 min-h-[44px] py-2.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl shadow-md shadow-emerald-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer select-none"
               >
                 {loading ? (
-                  <span>Processing Dispatch...</span>
+                  <span>Processing...</span>
                 ) : activeTab === 'signin' ? (
                   <>
-                    <span>Authenticate Identity</span>
+                    <span>Sign In to CampusRide</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 ) : (
                   <>
-                    <span>Complete Verification</span>
+                    <span>Complete Student Registration</span>
                     <ShieldCheck className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -388,9 +392,9 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
             </form>
 
             {/* Quick Demo Credentials Footer */}
-            <div className="pt-4 border-t border-[#E2E8F0] dark:border-[#27272A] text-[11px] font-mono text-slate-500 dark:text-zinc-400">
-              <span className="font-semibold uppercase tracking-wider text-slate-700 dark:text-zinc-300 block mb-1">
-                Demo Commuter Quick Fill:
+            <div className="pt-4 border-t border-slate-100 dark:border-zinc-800/80 text-[11px] text-slate-500 dark:text-zinc-400">
+              <span className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1">
+                Demo Accounts (1-Click Fill):
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1.5">
                 <button
@@ -400,10 +404,10 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
                     setPassword('Campus@2026');
                     setActiveTab('signin');
                   }}
-                  className="p-2 min-h-[44px] text-left border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090b] hover:border-emerald-500/50 rounded text-[10px] transition-all active:scale-[0.98] cursor-pointer"
+                  className="p-2.5 min-h-[44px] text-left border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/60 hover:border-emerald-500/50 rounded-xl text-[11px] transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  <span className="font-bold text-[#0F172A] dark:text-emerald-400 block font-mono">Driver Aarav (Car)</span>
-                  <span className="text-slate-500 dark:text-zinc-500 font-mono">aarav.sharma@...</span>
+                  <span className="font-semibold text-slate-900 dark:text-emerald-400 block">Driver Aarav (Car)</span>
+                  <span className="text-slate-500 dark:text-zinc-400 font-mono text-[10px]">aarav.sharma@...</span>
                 </button>
                 <button
                   type="button"
@@ -412,10 +416,10 @@ export default function AuthView({ onAuthSuccess, apiBase = '/api' }) {
                     setPassword('Campus@2026');
                     setActiveTab('signin');
                   }}
-                  className="p-2 min-h-[44px] text-left border border-[#E2E8F0] dark:border-[#27272A] bg-slate-50 dark:bg-[#09090b] hover:border-emerald-500/50 rounded text-[10px] transition-all active:scale-[0.98] cursor-pointer"
+                  className="p-2.5 min-h-[44px] text-left border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/60 hover:border-emerald-500/50 rounded-xl text-[11px] transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  <span className="font-bold text-[#0F172A] dark:text-emerald-400 block font-mono">Rider Rohan</span>
-                  <span className="text-slate-500 dark:text-zinc-500 font-mono">rohan.verma@...</span>
+                  <span className="font-semibold text-slate-900 dark:text-emerald-400 block">Rider Rohan</span>
+                  <span className="text-slate-500 dark:text-zinc-400 font-mono text-[10px]">rohan.verma@...</span>
                 </button>
               </div>
             </div>

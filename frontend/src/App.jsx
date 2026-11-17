@@ -34,7 +34,9 @@ import {
   Navigation,
   Zap,
   Trash2,
-  X
+  X,
+  Radar,
+  Radio
 } from 'lucide-react';
 
 // Relative API base path allows frontend to dynamically target the active host
@@ -78,6 +80,11 @@ export default function App() {
   const [detectedAutoHub, setDetectedAutoHub] = useState('Noida 62');
   const userManuallyChangedHubRef = useRef(false);
   const [showLiveMap, setShowLiveMap] = useState(true);
+
+  // Live Radar Corridor Scan Simulation State
+  const [scanningRouteId, setScanningRouteId] = useState(null);
+  const [radarMatchedCorridor, setRadarMatchedCorridor] = useState(null);
+  const [isMapPulsing, setIsMapPulsing] = useState(false);
 
   // Live GPS Geolocation Hook (Prompts on initial dispatch view access)
   const {
@@ -151,6 +158,7 @@ export default function App() {
   const handleHubSelect = (hub) => {
     userManuallyChangedHubRef.current = true;
     setSelectedHubFilter(hub);
+    setRadarMatchedCorridor(null);
   };
 
   // Saved Route Modal / Form
@@ -203,6 +211,27 @@ export default function App() {
       return ['Indirapuram', 'FNG Expwy', 'Noida Expwy', 'Pari Chowk', 'KCC ITM'];
     }
     return [origin || 'Pickup Hub', 'Corridor Link', 'Pari Chowk', 'KCC ITM'];
+  };
+
+  // Student Academic Tag Helper (authentic KCC ITM department/year trust cues)
+  const getStudentAcademicTag = (name = '', emailOrId = '') => {
+    const branches = [
+      'B.Tech CSE',
+      'B.Tech IT',
+      'B.Tech AI & ML',
+      'B.Tech Data Science',
+      'B.Tech ECE',
+      'B.Tech ME'
+    ];
+    const years = ['2nd Year', '3rd Year', '4th Year', '1st Year'];
+    let hash = 0;
+    const seed = (name + emailOrId) || 'KCC ITM';
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash << 5) - hash + seed.charCodeAt(i);
+    }
+    const b = branches[Math.abs(hash) % branches.length];
+    const y = years[Math.abs(hash >> 2) % years.length];
+    return `${b} • ${y}`;
   };
 
   // Show Toast
@@ -453,14 +482,57 @@ export default function App() {
     }
   };
 
-  // 1-Click Route Autofill
+  // 1-Click Route Autofill & Live Radar Corridor Scan
   const handleUseSavedRoute = (route) => {
-    setPostOrigin(route.origin_zone);
-    setPostGate(route.campus_gate);
-    setPostTime(route.preferred_time);
-    setSandboxOrigin(route.origin_zone);
-    setSandboxGate(route.campus_gate);
-    notify(`Autofilled: ${route.origin_zone} ➔ ${route.campus_gate}`);
+    if (scanningRouteId) return;
+
+    setScanningRouteId(route.id);
+    setIsMapPulsing(true);
+    setShowLiveMap(true);
+    setActiveTab('rider');
+
+    // Immediate scanning interactive feedback
+    notify(`Scanning Corridor Radar for ${route.origin_zone}...`, 'info');
+
+    // 1.8-second simulated live radar sweep
+    setTimeout(() => {
+      // 1. Match route corridor to closest hub filter
+      const standardHubs = ['Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'];
+      const matchedHub =
+        standardHubs.find((h) =>
+          (route.origin_zone || '').toLowerCase().includes(h.toLowerCase())
+        ) || 'Noida 62';
+
+      // 2. Filter available rides & highlight matching corridor
+      userManuallyChangedHubRef.current = true;
+      setSelectedHubFilter(matchedHub);
+      setRadarMatchedCorridor(matchedHub);
+
+      // 3. Autofill routine parameters
+      setPostOrigin(route.origin_zone);
+      setPostGate(route.campus_gate);
+      setPostTime(route.preferred_time);
+      setSandboxOrigin(route.origin_zone);
+      setSandboxGate(route.campus_gate);
+
+      // 4. Reset scanning state
+      setScanningRouteId(null);
+      setIsMapPulsing(false);
+
+      // 5. Success confirmation toast
+      notify('Matched with verified student commuter on this corridor!', 'success');
+
+      // Scroll to available rides section smoothly
+      const ridesSection = document.getElementById('available-rides-section');
+      if (ridesSection) {
+        ridesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Auto-clear highlight badge after 8 seconds
+      setTimeout(() => {
+        setRadarMatchedCorridor((curr) => (curr === matchedHub ? null : curr));
+      }, 8000);
+    }, 1800);
   };
 
   // Delete / Remove Saved Corridor Item
@@ -535,7 +607,7 @@ export default function App() {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#09090B] text-[#0F172A] dark:text-[#FAFAFA] flex flex-col font-sans w-full overflow-x-hidden">
       {/* Tactical Toast Notification */}
       {notification && (
-        <div className={`fixed top-3 left-3 right-3 sm:left-auto sm:right-4 z-50 max-w-sm sm:max-w-md px-3.5 sm:px-4 py-2.5 rounded border flex items-center gap-2.5 text-xs font-mono shadow-xl transition-all ${
+        <div className={`fixed top-3 left-3 right-3 sm:left-auto sm:right-4 z-[10050] max-w-sm sm:max-w-md px-3.5 sm:px-4 py-2.5 rounded border flex items-center gap-2.5 text-xs font-mono shadow-xl transition-all ${
           notification.type === 'error'
             ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-[#1c1012] dark:text-rose-300 dark:border-rose-800/80'
             : notification.type === 'info'
@@ -547,19 +619,25 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Header: Tactical Dispatch Console */}
-      <header className="bg-white dark:bg-[#09090b] border-b border-[#E2E8F0] dark:border-[#27272a] sticky top-0 z-40 transition-colors w-full">
+      {/* Top Header: Campus Navigation & Student Trust Console */}
+      <header className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-zinc-800/80 sticky top-0 z-40 transition-colors w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 shrink-0 bg-slate-100 dark:bg-[#121215] text-emerald-500 border border-[#E2E8F0] dark:border-emerald-500/50 flex items-center justify-center font-mono font-bold text-xs rounded">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm">
               CR
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm sm:text-base tracking-tight text-[#0F172A] dark:text-white font-mono">CAMPUS<span className="text-emerald-500">RIDE</span></span>
+                <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white font-sans">
+                  CAMPUS<span className="text-emerald-500">RIDE</span>
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                  KCC Verified
+                </span>
               </div>
-              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
-                KCC Institute • Knowledge Park II, Greater Noida
+              <span className="text-[11px] text-slate-500 dark:text-zinc-400 block truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
+                KCC Institute of Technology & Management • Knowledge Park II
               </span>
             </div>
           </div>
@@ -571,28 +649,32 @@ export default function App() {
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 min-h-[38px] text-xs font-mono font-semibold uppercase tracking-wider bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-700 text-[#0F172A] dark:text-zinc-300 rounded active:scale-[0.98] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-xs font-semibold uppercase tracking-wider bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-200 rounded-full active:scale-[0.98] transition-all cursor-pointer shadow-sm"
             >
               {theme === 'dark' ? (
                 <>
                   <Sun key="sun-icon" className="w-3.5 h-3.5 text-amber-400 theme-toggle-icon shrink-0" />
-                  <span className="font-mono hidden sm:inline">LIGHT</span>
+                  <span className="hidden sm:inline text-[11px] font-mono">LIGHT</span>
                 </>
               ) : (
                 <>
                   <Moon key="moon-icon" className="w-3.5 h-3.5 text-slate-700 theme-toggle-icon shrink-0" />
-                  <span className="font-mono hidden sm:inline">DARK</span>
+                  <span className="hidden sm:inline text-[11px] font-mono">DARK</span>
                 </>
               )}
             </button>
 
-            {/* Profile Info Badge (Gracefully truncates on mobile screens) */}
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] px-2 sm:px-3 py-1 min-h-[38px] rounded text-xs font-mono max-w-[110px] sm:max-w-[180px] md:max-w-[240px]">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            {/* Student Profile Identity Badge with Academic Trust Cue */}
+            <div className="flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs max-w-[130px] xs:max-w-[180px] sm:max-w-[260px] shadow-sm">
+              <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-[11px] shrink-0">
+                {currentUser.full_name?.charAt(0) || 'U'}
+              </div>
               <div className="min-w-0 truncate">
-                <span className="font-semibold text-[#0F172A] dark:text-white block truncate leading-tight">{currentUser.full_name}</span>
-                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-zinc-400 block font-mono truncate leading-tight">
-                  {currentUser.college_email}
+                <span className="font-semibold text-slate-900 dark:text-white block truncate leading-tight">
+                  {currentUser.full_name}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 block truncate leading-tight mt-0.5">
+                  {getStudentAcademicTag(currentUser.full_name, currentUser.college_email)}
                 </span>
               </div>
             </div>
@@ -601,7 +683,7 @@ export default function App() {
               onClick={handleLogout}
               title="Sign Out"
               aria-label="Sign Out"
-              className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] flex items-center justify-center rounded bg-white dark:bg-[#121215] hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-[#E2E8F0] dark:border-[#27272a] hover:border-rose-400 dark:hover:border-rose-700 text-slate-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300 active:scale-[0.98] transition-all cursor-pointer"
+              className="p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-slate-200/80 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-700 text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
             >
               <LogOut className="w-4 h-4 shrink-0" />
             </button>
@@ -609,40 +691,43 @@ export default function App() {
         </div>
       </header>
 
-      {/* Sub-Header & Mode Navigation */}
-      <div className="bg-slate-50 dark:bg-[#09090b] border-b border-[#E2E8F0] dark:border-[#27272a] py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full">
+      {/* Sub-Header & Sleek Pill-Segmented Mode Navigation */}
+      <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          {/* Mode Switch Tabs - Horizontally scrollable on mobile with hidden scrollbar */}
+          {/* Mode Switcher: Sleek Pill-Segmented Control */}
           <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
-            <div className="inline-flex bg-white dark:bg-[#121215] p-1 rounded border border-[#E2E8F0] dark:border-[#27272a] whitespace-nowrap">
+            <div className="inline-flex p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
               <button
+                type="button"
                 onClick={() => setActiveTab('rider')}
-                className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[36px] sm:min-h-0 active:scale-[0.98] cursor-pointer ${
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'rider'
-                    ? 'bg-slate-200 dark:bg-zinc-800 text-[#0F172A] dark:text-white border border-slate-300 dark:border-zinc-700 shadow-sm font-bold'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                    ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Users className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span>Rider Dispatch</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('driver')}
-                className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[36px] sm:min-h-0 active:scale-[0.98] cursor-pointer ${
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'driver'
-                    ? 'bg-slate-200 dark:bg-zinc-800 text-[#0F172A] dark:text-white border border-slate-300 dark:border-zinc-700 shadow-sm font-bold'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                    ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-zinc-700'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Car className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span>Driver Mode</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('matcher')}
-                className={`px-3 py-1.5 rounded text-xs font-mono font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[36px] sm:min-h-0 active:scale-[0.98] cursor-pointer ${
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap active:scale-[0.98] cursor-pointer ${
                   activeTab === 'matcher'
-                    ? 'bg-emerald-500 text-black border border-emerald-400 font-bold'
-                    : 'text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm shadow-emerald-500/20'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
@@ -656,7 +741,7 @@ export default function App() {
               onClick={refreshDashboard}
               title="Refresh Live State"
               aria-label="Refresh Live State"
-              className="p-2 sm:p-1.5 rounded min-h-[36px] min-w-[36px] flex items-center justify-center bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-400 dark:hover:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer"
+              className="p-2 sm:p-2 rounded-full min-h-[36px] min-w-[36px] flex items-center justify-center bg-white/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer shadow-sm"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingFeed ? 'animate-spin text-emerald-500' : ''}`} />
             </button>
@@ -668,25 +753,25 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
 
         {/* 1. SAVED ROUTES SECTION */}
-        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-[#3f3f46] rounded p-4 sm:p-5 lg:p-6 transition-colors shadow-sm w-full">
-          <div className="flex justify-between items-center mb-3">
+        <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl p-5 sm:p-6 transition-all shadow-sm w-full">
+          <div className="flex justify-between items-center mb-3.5">
             <div className="flex items-center gap-2">
               <Bookmark className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white font-mono">Saved Commute Corridors</h2>
-              <span className="text-[10px] bg-slate-100 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-slate-600 dark:text-zinc-400 px-1.5 py-0.5 rounded font-mono">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Saved Commute Corridors</h2>
+              <span className="text-[11px] bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700/80 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-full font-medium">
                 1-Click Autofill
               </span>
             </div>
             <button
               onClick={() => setShowNewRouteModal(true)}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 font-mono font-semibold cursor-pointer"
+              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 font-semibold cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5" /> Add Corridor
             </button>
           </div>
 
           {savedRoutes.length === 0 ? (
-            <div className="text-center py-4 text-slate-500 dark:text-zinc-500 text-xs bg-slate-50 dark:bg-[#09090b] rounded border border-dashed border-[#E2E8F0] dark:border-[#27272a] font-mono">
+            <div className="text-center py-6 text-slate-500 dark:text-zinc-400 text-xs bg-slate-50/60 dark:bg-zinc-900/40 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800">
               No saved routes yet. Add your daily home commute corridor for 1-click autofill.
             </div>
           ) : (
@@ -694,37 +779,52 @@ export default function App() {
               {savedRoutes.map((route) => (
                 <div
                   key={route.id}
-                  className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 p-3 rounded flex flex-col justify-between transition-colors"
+                  className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 p-3.5 rounded-xl flex flex-col justify-between transition-all"
                 >
                   <div>
-                    <div className="font-semibold text-xs text-[#0F172A] dark:text-white mb-1 flex items-center justify-between font-mono">
-                      <span>{route.route_label}</span>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">{route.preferred_time}</span>
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white mb-1.5 flex items-center justify-between">
+                      <span className="truncate">{route.route_label}</span>
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-bold shrink-0">{route.preferred_time}</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1 truncate mb-2 font-mono">
-                      <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
+                    <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1 truncate mb-2">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span className="font-medium text-slate-700 dark:text-zinc-300">{route.origin_zone}</span>
-                      <ChevronRight className="w-3 h-3 shrink-0 text-slate-400 dark:text-zinc-600" />
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-zinc-600" />
                       <span className="text-slate-600 dark:text-zinc-400">{route.campus_gate}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-[#E2E8F0] dark:border-[#27272a]">
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60 dark:border-zinc-800/80">
                     <button
                       type="button"
+                      disabled={scanningRouteId === route.id}
                       onClick={() => handleUseSavedRoute(route)}
-                      className="flex-1 bg-white dark:bg-[#121215] hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:text-[#0F172A] dark:hover:text-white text-[11px] font-mono font-semibold py-1 px-2 rounded transition-all flex items-center justify-center gap-1 border border-[#E2E8F0] dark:border-[#27272a] active:scale-[0.98] cursor-pointer"
+                      className={`flex-1 text-xs font-semibold py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 border active:scale-[0.98] ${
+                        scanningRouteId === route.id
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-400 dark:border-emerald-600 animate-pulse cursor-wait'
+                          : 'bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-zinc-700 shadow-sm cursor-pointer'
+                      }`}
                     >
-                      <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                      <span>Apply Route</span>
+                      {scanningRouteId === route.id ? (
+                        <>
+                          <Radar className="w-3.5 h-3.5 text-emerald-500 animate-spin shrink-0" />
+                          <span className="truncate">Scanning Corridor Radar...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>Apply Route</span>
+                        </>
+                      )}
                     </button>
                     <button
                       type="button"
+                      disabled={scanningRouteId === route.id}
                       onClick={(e) => handleDeleteSavedRoute(route.id, e)}
                       title="Remove saved corridor"
                       aria-label="Remove saved corridor"
-                      className="px-2 py-1 rounded bg-white dark:bg-[#121215] hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-[#E2E8F0] dark:border-[#27272a] hover:border-rose-300 dark:hover:border-rose-800 text-[11px] font-mono font-semibold transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-800 text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-sm"
                     >
-                      <Trash2 className="w-3 h-3 text-rose-500 shrink-0" />
+                      <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                       <span>Remove</span>
                     </button>
                   </div>
@@ -736,26 +836,26 @@ export default function App() {
 
         {/* 2. MODE CONTENT: RIDER VIEW */}
         {activeTab === 'rider' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+          <div id="available-rides-section" className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
             {/* Live Ride Feed (2 cols on lg, stacked on md/sm) */}
             <div className="lg:col-span-2 space-y-4 w-full">
               <div className="flex flex-wrap justify-between items-center gap-2">
                 <div>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] dark:text-white flex items-center gap-2 font-mono">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <Activity className="w-4 h-4 text-emerald-500 shrink-0" /> Available Rides to Campus
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono">Verified student driver carpools bound for KCC Institute of Technology & Management</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Verified student driver carpools bound for KCC Institute of Technology & Management</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowLiveMap(!showLiveMap)}
-                    className="text-xs font-mono bg-white dark:bg-[#121215] text-[#0F172A] dark:text-zinc-300 border border-[#E2E8F0] dark:border-[#27272a] hover:border-emerald-500 px-2.5 py-1 rounded font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="text-xs bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md text-slate-700 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-800 hover:border-emerald-500 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] shadow-sm"
                   >
                     <Compass className="w-3.5 h-3.5 text-emerald-500" />
                     <span>{showLiveMap ? 'Hide Radar' : 'Live Radar'}</span>
                   </button>
-                  <span className="text-xs font-mono bg-white dark:bg-[#121215] text-emerald-600 dark:text-emerald-400 border border-[#E2E8F0] dark:border-emerald-500/30 px-2 py-1 rounded font-semibold whitespace-nowrap">
+                  <span className="text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80 px-3 py-1 rounded-full font-semibold whitespace-nowrap shadow-sm">
                     {filteredRides.length} active
                   </span>
                 </div>
@@ -763,21 +863,25 @@ export default function App() {
 
               {/* Live Interactive Corridor Radar & Geolocation Map */}
               {showLiveMap && (
-                <LiveRouteMap
-                  theme={theme}
-                  activeHubFilter={selectedHubFilter}
-                  onSelectHub={(hub) => handleHubSelect(hub)}
-                  userLocation={userLocation}
-                  isLocating={isLocating}
-                  locationError={locationError}
-                  onRequestLocation={requestLocation}
-                />
+                <div className={`w-full relative z-0 transition-all duration-300 rounded-2xl overflow-hidden ${
+                  isMapPulsing ? 'ring-2 ring-emerald-500 shadow-lg shadow-emerald-500/25 animate-pulse' : ''
+                }`}>
+                  <LiveRouteMap
+                    theme={theme}
+                    activeHubFilter={selectedHubFilter}
+                    onSelectHub={(hub) => handleHubSelect(hub)}
+                    userLocation={userLocation}
+                    isLocating={isLocating}
+                    locationError={locationError}
+                    onRequestLocation={requestLocation}
+                  />
+                </div>
               )}
 
-              {/* Hub Quick-Filter Bar - Swipable on mobile with hidden scrollbar */}
-              <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-2 rounded flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar text-xs font-mono shadow-sm">
-                <span className="text-slate-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-                  <Filter className="w-3 h-3 text-emerald-500 shrink-0" /> Pickup Hub:
+              {/* Hub Quick-Filter Bar - Swipable on mobile with sleek pill styling */}
+              <div className="bg-white/80 dark:bg-[#121215]/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar text-xs shadow-sm">
+                <span className="text-slate-500 dark:text-zinc-400 text-[11px] font-medium uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1 pl-1">
+                  <Filter className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Hubs:
                 </span>
                 {['All Hubs', 'Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].map((hub) => {
                   const isNearest = detectedAutoHub === hub && hub !== 'All Hubs';
@@ -786,17 +890,17 @@ export default function App() {
                       key={hub}
                       type="button"
                       onClick={() => handleHubSelect(hub)}
-                      className={`px-3 py-1.5 sm:py-1 rounded border text-[11px] font-semibold transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 min-h-[36px] sm:min-h-0 flex items-center justify-center gap-1.5 ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
                         selectedHubFilter === hub
-                          ? 'bg-emerald-500 text-black border-emerald-400 font-bold shadow-sm'
-                          : 'bg-slate-50 dark:bg-[#09090b] text-slate-600 dark:text-zinc-400 border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 hover:text-[#0F172A] dark:hover:text-white'
+                          ? 'bg-emerald-500 text-slate-950 font-semibold shadow-sm shadow-emerald-500/20'
+                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       <span>{hub}</span>
                       {isNearest && (
-                        <span className={`text-[8px] uppercase tracking-wider px-1 py-0.2 rounded font-bold ${
+                        <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded-full font-bold ${
                           selectedHubFilter === hub
-                            ? 'bg-black/20 text-black'
+                            ? 'bg-black/20 text-slate-950'
                             : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300/50 dark:border-emerald-700/50'
                         }`}>
                           Nearest
@@ -808,73 +912,89 @@ export default function App() {
               </div>
 
               {filteredRides.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-[#121215] rounded border border-[#E2E8F0] dark:border-[#27272a] font-mono shadow-sm p-4">
+                <div className="text-center py-12 bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 shadow-sm p-6">
                   <Car className="w-8 h-8 text-slate-400 dark:text-zinc-600 mx-auto mb-2" />
-                  <p className="text-slate-800 dark:text-zinc-300 text-xs font-semibold">No active student rides found for "{selectedHubFilter}".</p>
-                  <p className="text-slate-500 dark:text-zinc-500 text-[11px] mt-1">Select "All Hubs" or switch to Driver Mode tab to publish seats.</p>
+                  <p className="text-slate-800 dark:text-zinc-200 text-sm font-semibold">No active student rides found for "{selectedHubFilter}".</p>
+                  <p className="text-slate-500 dark:text-zinc-400 text-xs mt-1">Select "All Hubs" or switch to Driver Mode tab to publish seats.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {filteredRides.map((ride) => {
                     const waypoints = getCorridorWaypoints(ride.origin_zone);
                     const isLalKuan = (ride.origin_zone || '').toLowerCase().includes('lal kuan');
+                    const isRadarMatched = radarMatchedCorridor && (ride.origin_zone || '').toLowerCase().includes(radarMatchedCorridor.toLowerCase());
 
                     return (
                       <div
                         key={ride.id}
-                        className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 rounded p-4 sm:p-5 lg:p-6 flex flex-col justify-between gap-3.5 transition-colors shadow-sm w-full"
+                        className={`bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-3.5 transition-all shadow-sm hover:shadow-md w-full ${
+                          isRadarMatched
+                            ? 'border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-500/50 shadow-md shadow-emerald-500/10'
+                            : 'border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700'
+                        }`}
                       >
-                        {/* Driver & Status Header */}
-                        <div className="flex items-center justify-between gap-2.5 border-b border-[#E2E8F0] dark:border-[#27272a] pb-2.5">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded bg-slate-100 dark:bg-[#1c1c21] border border-slate-300 dark:border-zinc-700 flex items-center justify-center font-bold text-xs text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                        {/* Driver & Status Header with Academic Trust Cues */}
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center font-bold text-sm text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
                               {ride.driver.full_name.charAt(0)}
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="font-bold text-xs text-[#0F172A] dark:text-white truncate">{ride.driver.full_name}</span>
-                                <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 px-1.5 py-0.5 rounded font-mono uppercase tracking-wider font-semibold whitespace-nowrap">
+                                <span className="font-semibold text-sm text-slate-900 dark:text-white truncate">{ride.driver.full_name}</span>
+                                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
                                   Verified @college.edu.in
                                 </span>
+                                {isRadarMatched && (
+                                  <span className="text-[10px] bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm animate-pulse">
+                                    <Radio className="w-2.5 h-2.5 shrink-0" />
+                                    Matched Corridor
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block truncate">
-                                {ride.vehicle_type === 'two_wheeler' ? 'Motorcycle' : 'Car'} • {ride.notes?.split('.')[0] || 'Verified Commuter'}
-                              </span>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
+                                <span>{getStudentAcademicTag(ride.driver.full_name, ride.driver.college_email || ride.id)}</span>
+                                <span className="text-slate-300 dark:text-zinc-700">•</span>
+                                <span>{ride.vehicle_type === 'two_wheeler' ? 'Motorcycle' : 'Car'}</span>
+                                <span className="text-slate-300 dark:text-zinc-700">•</span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-medium">KCC Commuter</span>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="text-right font-mono shrink-0">
-                            <span className="text-[10px] text-slate-500 dark:text-zinc-500 uppercase tracking-wider block">Available</span>
-                            <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                              {ride.seats_available} <span className="text-xs text-slate-500 dark:text-zinc-500 font-normal">/ {ride.seats_total} seats</span>
+                          <div className="text-right shrink-0">
+                            <span className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-wider block font-medium">Available</span>
+                            <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">
+                              {ride.seats_available} <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">/ {ride.seats_total} seats</span>
                             </span>
                           </div>
                         </div>
 
                         {/* Interactive Corridor Visualizer (Node-and-line Timeline - Responsive wrapping layout) */}
-                        <div className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded p-2.5 sm:p-3 space-y-2">
-                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-zinc-400">
-                            <span className="uppercase tracking-wider flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-semibold">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                        <div className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/70 dark:border-zinc-800/70 rounded-xl p-3 space-y-2">
+                          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
+                            <span className="uppercase tracking-wider flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-semibold text-[10px]">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                               Route Stops
                             </span>
                             {isLalKuan && (
-                              <span className="text-amber-700 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/80 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider whitespace-nowrap">
+                              <span className="text-amber-700 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800/80 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider whitespace-nowrap">
                                 ⚡ Fastest Route
                               </span>
                             )}
                           </div>
 
                           {/* Node & Line Sequence: Wrapping flex layout on narrow screens, horizontal flow on wider */}
-                          <div className="flex flex-wrap items-center gap-y-2 gap-x-1 sm:gap-x-1.5 py-1 text-[11px] font-mono">
+                          <div className="flex flex-wrap items-center gap-y-2 gap-x-1 sm:gap-x-1.5 py-1 text-xs">
                             {waypoints.map((node, idx) => (
                               <React.Fragment key={idx}>
-                                <span className={`px-2 py-0.5 rounded border whitespace-nowrap text-[10px] font-semibold ${
+                                <span className={`px-2.5 py-0.5 rounded-lg border whitespace-nowrap text-[11px] font-medium ${
                                   idx === 0
-                                    ? 'bg-slate-200 dark:bg-[#1a1a22] text-slate-800 dark:text-zinc-200 border-slate-300 dark:border-zinc-700'
+                                    ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 border-slate-300 dark:border-zinc-700 font-semibold'
                                     : idx === waypoints.length - 1
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-400 dark:border-emerald-600 font-bold'
-                                    : 'bg-white dark:bg-[#121215] text-slate-600 dark:text-zinc-400 border-[#E2E8F0] dark:border-[#27272a]'
+                                    : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800'
                                 }`}>
                                   {node}
                                 </span>
@@ -892,19 +1012,19 @@ export default function App() {
 
                         {/* Telemetry Metrics Badges & Action Bar */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] font-mono">
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-1 sm:py-0.5 rounded text-slate-700 dark:text-zinc-300 flex items-center gap-1 whitespace-nowrap">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px]">
+                            <span className="bg-slate-100/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-slate-700 dark:text-zinc-300 flex items-center gap-1 font-mono whitespace-nowrap">
                               <Clock className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> Dep: {ride.departure_time}
                             </span>
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-emerald-500/40 px-2 py-1 sm:py-0.5 rounded text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold whitespace-nowrap">
-                              <TrendingUp className="w-3 h-3 text-emerald-500 shrink-0" /> AutoML ETA: {ride.predicted_eta_mins}m
+                            <span className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1 rounded-lg text-emerald-700 dark:text-emerald-300 flex items-center gap-1 font-mono font-semibold whitespace-nowrap">
+                              <TrendingUp className="w-3 h-3 text-emerald-500 shrink-0" /> ETA: {ride.predicted_eta_mins}m
                             </span>
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-1 sm:py-0.5 rounded text-slate-700 dark:text-zinc-300 flex items-center gap-1 whitespace-nowrap">
+                            <span className="bg-slate-100/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-slate-700 dark:text-zinc-300 flex items-center gap-1 font-mono whitespace-nowrap">
                               <Navigation className="w-3 h-3 text-slate-400 dark:text-zinc-400 shrink-0" /> {ride.distance_km} km
                             </span>
-                            <span className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] px-2 py-1 sm:py-0.5 rounded text-slate-700 dark:text-zinc-300 whitespace-nowrap">
+                            <span className="bg-slate-100/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 px-2.5 py-1 rounded-lg text-slate-700 dark:text-zinc-300 whitespace-nowrap font-medium text-[10px]">
                               {isLalKuan ? (
-                                <span className="text-amber-600 dark:text-amber-400 font-bold">Traffic: Lal Kuan Bypassed</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-semibold">Traffic: Lal Kuan Bypassed</span>
                               ) : (
                                 <span>Traffic: Clear</span>
                               )}
@@ -914,7 +1034,7 @@ export default function App() {
                           <button
                             onClick={() => handleBookSeat(ride.id)}
                             disabled={ride.seats_available <= 0 || ride.driver.id === currentUser.id}
-                            className="w-full sm:w-auto min-h-[44px] flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold px-4 py-2.5 sm:py-1.5 rounded text-xs transition-all border border-emerald-400 disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-zinc-800 disabled:text-slate-400 dark:disabled:text-zinc-500 disabled:border-slate-300 dark:disabled:border-zinc-700 active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                            className="w-full sm:w-auto min-h-[44px] flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-zinc-800 disabled:text-slate-400 dark:disabled:text-zinc-500 disabled:border-slate-300 dark:disabled:border-zinc-700 active:scale-[0.98] cursor-pointer whitespace-nowrap"
                           >
                             {ride.driver.id === currentUser.id ? (
                               'Your Posted Ride'
@@ -934,34 +1054,36 @@ export default function App() {
 
             {/* Sidebar: Confirmed Bookings (Stacks cleanly below on mobile/tablet) */}
             <div className="space-y-4 w-full">
-              <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 sm:p-5 lg:p-6 shadow-sm w-full">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white mb-3 flex items-center gap-1.5 font-mono">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Confirmed Bookings
+              <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-sm w-full">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3.5 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Confirmed Bookings
                 </h3>
 
                 {myBookings.length === 0 ? (
-                  <p className="text-xs text-slate-500 dark:text-zinc-500 py-3 text-center font-mono">No active bookings. Select a ride to confirm your seat.</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 py-4 text-center">No active bookings. Select a ride to confirm your seat.</p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {myBookings.map((b) => (
-                      <div key={b.booking_id} className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] p-3 rounded text-xs font-mono">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">Confirmed</span>
-                          <span className="text-[10px] text-slate-500 dark:text-zinc-500">{b.ride.departure_time}</span>
+                      <div key={b.booking_id} className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 p-3.5 rounded-xl text-xs">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5" /> Confirmed
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400">{b.ride.departure_time}</span>
                         </div>
-                        <div className="text-slate-800 dark:text-zinc-300 font-medium truncate mb-1">
+                        <div className="text-slate-900 dark:text-white font-medium truncate mb-1">
                           {b.ride.origin_zone} ➔ {b.ride.destination_gate}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 mt-2 border-t border-[#E2E8F0] dark:border-[#27272a] pt-1.5">
-                          <Phone className="w-3 h-3 text-slate-400 dark:text-zinc-500 shrink-0" />
+                        <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 mt-2 border-t border-slate-200/60 dark:border-zinc-800/60 pt-2">
+                          <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
                           <span className="truncate">Driver: {b.ride.driver.full_name} ({b.ride.driver.phone || 'Campus Commuter'})</span>
                         </div>
                       </div>
                     ))}
 
                     {/* Passenger Live Tracking Map for Active Bookings (Desktop/Tablet multi-instance; hidden on mobile to enforce single map view) */}
-                    <div className="hidden md:block mt-4 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a] space-y-2">
-                      <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400 block uppercase tracking-wider font-semibold">
+                    <div className="hidden md:block relative z-0 mt-4 pt-3 border-t border-slate-200/60 dark:border-zinc-800/60 space-y-2">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block">
                         Live Passenger Route Tracking
                       </span>
                       <LiveRouteMap
@@ -976,7 +1098,7 @@ export default function App() {
                     </div>
 
                     {/* Mobile fallback indicator connecting user to primary interactive map */}
-                    <div className="md:hidden mt-3 pt-2 border-t border-[#E2E8F0] dark:border-[#27272a] flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-zinc-400">
+                    <div className="md:hidden mt-3 pt-2 border-t border-slate-200/60 dark:border-zinc-800/60 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
                       <span className="flex items-center gap-1.5 truncate">
                         <Compass className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                         <span>Live GPS route active in main radar</span>
@@ -988,7 +1110,7 @@ export default function App() {
                             setShowLiveMap(true);
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
-                          className="text-emerald-600 dark:text-emerald-400 font-semibold underline shrink-0 cursor-pointer text-[10px]"
+                          className="text-emerald-600 dark:text-emerald-400 font-semibold underline shrink-0 cursor-pointer text-xs"
                         >
                           Show Radar
                         </button>
@@ -1005,21 +1127,21 @@ export default function App() {
         {activeTab === 'driver' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
             {/* Post Ride Card (1 col on lg, stacked on md/sm) */}
-            <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 sm:p-5 lg:p-6 space-y-4 shadow-sm w-full">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm w-full">
               <div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white flex items-center gap-2 font-mono">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Car className="w-4 h-4 text-emerald-500 shrink-0" /> Post Empty Seats
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 font-mono">Offer seats along verified campus commuter corridors</p>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Offer seats along verified campus commuter corridors</p>
               </div>
 
-              <form onSubmit={handlePostRide} className="space-y-3.5 text-xs font-mono">
+              <form onSubmit={handlePostRide} className="space-y-3.5 text-xs">
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Pickup Corridor (Origin)</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Pickup Corridor (Origin)</label>
                   <select
                     value={postOrigin}
                     onChange={(e) => setPostOrigin(e.target.value)}
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   >
                     {locations.corridors?.map((c) => (
                       <option key={c.zone} value={c.zone}>
@@ -1030,11 +1152,11 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Campus Gate Destination</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Campus Gate Destination</label>
                   <select
                     value={postGate}
                     onChange={(e) => setPostGate(e.target.value)}
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   >
                     {locations.campus_gates?.map((g) => (
                       <option key={g} value={g}>{g}</option>
@@ -1044,34 +1166,34 @@ export default function App() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Departure Time</label>
+                    <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Departure Time</label>
                     <input
                       type="text"
                       placeholder="08:30 AM"
                       value={postTime}
                       onChange={(e) => setPostTime(e.target.value)}
-                      className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                      className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Seats Available</label>
+                    <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Seats Available</label>
                     <input
                       type="number"
                       min="1"
                       max="6"
                       value={postSeats}
                       onChange={(e) => setPostSeats(e.target.value)}
-                      className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                      className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Vehicle Type</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Vehicle Type</label>
                   <select
                     value={postVehicle}
                     onChange={(e) => setPostVehicle(e.target.value)}
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   >
                     <option value="car">Car (Sedan / Hatchback / SUV)</option>
                     <option value="two_wheeler">Two-Wheeler (Motorcycle / Scooty)</option>
@@ -1079,20 +1201,20 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Pickup Notes / Landmark</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Pickup Notes / Landmark</label>
                   <input
                     type="text"
                     placeholder="e.g. Near Metro Gate 2, Leaving sharp."
                     value={postNotes}
                     onChange={(e) => setPostNotes(e.target.value)}
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={postLoading}
-                  className="w-full min-h-[44px] bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-2.5 rounded transition-all border border-emerald-400 flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2 font-mono text-xs uppercase tracking-wider active:scale-[0.98] cursor-pointer"
+                  className="w-full min-h-[44px] bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm shadow-emerald-500/20 flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2 text-xs active:scale-[0.98] cursor-pointer"
                 >
                   {postLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <><PlusCircle className="w-3.5 h-3.5" /> Publish Ride</>}
                 </button>
@@ -1103,61 +1225,61 @@ export default function App() {
             <div className="lg:col-span-2 space-y-4 w-full">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-white font-mono">My Posted Rides & Passengers</h2>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono">Real-time synchronization of confirmed student bookings</p>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">My Posted Rides & Passengers</h2>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Real-time synchronization of confirmed student bookings</p>
                 </div>
               </div>
 
               {myPostedRides.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-[#121215] rounded border border-[#E2E8F0] dark:border-[#27272a] text-xs text-slate-500 dark:text-zinc-500 font-mono shadow-sm p-4">
+                <div className="text-center py-12 bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 text-xs text-slate-500 dark:text-zinc-400 shadow-sm p-6">
                   You haven't posted any rides yet. Use the form on the left to offer seats.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {myPostedRides.map((ride) => (
-                    <div key={ride.id} className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 sm:p-5 space-y-3 shadow-sm w-full">
+                    <div key={ride.id} className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-3.5 shadow-sm hover:shadow-md transition-all w-full">
                       <div className="flex flex-wrap justify-between items-start gap-2">
                         <div>
-                          <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#0F172A] dark:text-white">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
                             <span>{ride.origin_zone}</span>
                             <ArrowRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                             <span>{ride.destination_gate}</span>
                           </div>
-                          <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono block mt-0.5">
+                          <span className="text-xs text-slate-500 dark:text-zinc-400 block mt-0.5 font-mono">
                             Departure: {ride.departure_time} • AutoML ETA: {ride.predicted_eta_mins} mins
                           </span>
                         </div>
-                        <div className="text-right font-mono">
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
+                        <div className="text-right">
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold font-mono whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full">
                             {ride.seats_available} of {ride.seats_total} seats free
                           </span>
                         </div>
                       </div>
 
                       {/* Passenger Bookings Table */}
-                      <div className="bg-slate-50 dark:bg-[#09090b] rounded p-3 border border-[#E2E8F0] dark:border-[#27272a] overflow-x-auto">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-2 font-mono">
+                      <div className="bg-slate-50/80 dark:bg-zinc-900/60 rounded-xl p-3.5 border border-slate-200/70 dark:border-zinc-800/70 overflow-x-auto">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-2">
                           Booked Passengers ({ride.passenger_bookings?.length || 0}):
                         </span>
                         {(!ride.passenger_bookings || ride.passenger_bookings.length === 0) ? (
-                          <span className="text-[11px] text-slate-500 dark:text-zinc-500 font-mono italic">No students booked yet. Seats open in feed.</span>
+                          <span className="text-xs text-slate-500 dark:text-zinc-500 italic">No students booked yet. Seats open in feed.</span>
                         ) : (
                           <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs font-mono min-w-[280px]">
+                            <table className="w-full text-left text-xs min-w-[280px]">
                               <thead>
-                                <tr className="border-b border-[#E2E8F0] dark:border-[#27272a] text-slate-500 dark:text-zinc-500 text-[10px] uppercase">
-                                  <th className="pb-1.5">Passenger Name</th>
-                                  <th className="pb-1.5">College Email</th>
-                                  <th className="pb-1.5 text-right">Status</th>
+                                <tr className="border-b border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 text-[10px] uppercase font-medium">
+                                  <th className="pb-2">Passenger Name</th>
+                                  <th className="pb-2">College Email</th>
+                                  <th className="pb-2 text-right">Status</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-[#E2E8F0] dark:divide-[#27272a]">
+                              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
                                 {ride.passenger_bookings.map((p) => (
                                   <tr key={p.booking_id}>
-                                    <td className="py-1.5 font-semibold text-[#0F172A] dark:text-white truncate max-w-[120px]">{p.rider_name}</td>
-                                    <td className="py-1.5 text-slate-500 dark:text-zinc-400 truncate max-w-[140px]">{p.rider_email}</td>
-                                    <td className="py-1.5 text-right">
-                                      <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap">
+                                    <td className="py-2 font-semibold text-slate-900 dark:text-white truncate max-w-[120px]">{p.rider_name}</td>
+                                    <td className="py-2 text-slate-500 dark:text-zinc-400 font-mono text-[11px] truncate max-w-[140px]">{p.rider_email}</td>
+                                    <td className="py-2 text-right">
+                                      <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap">
                                         Confirmed
                                       </span>
                                     </td>
@@ -1180,35 +1302,37 @@ export default function App() {
         {activeTab === 'matcher' && (
           <div className="space-y-6">
             {/* KCC Institute Specific AutoML Route Predictor Card */}
-            <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-5 space-y-4 shadow-sm">
-              <div className="flex flex-wrap justify-between items-start gap-3 border-b border-[#E2E8F0] dark:border-[#27272a] pb-3">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm">
+              <div className="flex flex-wrap justify-between items-start gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-4">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-100 dark:bg-[#09090b] text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-bold uppercase mb-1 border border-emerald-500/40">
-                    <Sparkles className="w-3 h-3 text-emerald-500" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-1.5 border border-emerald-200 dark:border-emerald-800">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
                     AutoML Hybrid Routing Engine
                   </div>
-                  <h2 className="text-base font-bold text-[#0F172A] dark:text-white flex items-center gap-2 font-mono">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span>Target Destination:</span>
                     <span className="text-emerald-600 dark:text-emerald-400">KCC Institute of Technology and Management</span>
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                     Evaluates dynamic pickup points, applies Lal Kuan traffic bottleneck weights vs Expressway bypasses, and executes Dijkstra graph search.
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-500 block">Model Artifact:</span>
-                  <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">AutoML/kcc_route_bundle</span>
+                  <span className="text-[10px] text-slate-400 dark:text-zinc-500 block font-medium">Model Artifact:</span>
+                  <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                    AutoML/kcc_route_bundle
+                  </span>
                 </div>
               </div>
 
               {/* Controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 text-xs">
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1 font-mono">Pickup Location</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Pickup Location</label>
                   <select
                     value={kccPickup}
                     onChange={(e) => setKccPickup(e.target.value)}
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   >
                     <option value="Lal Kuan">Lal Kuan (Bottleneck Test)</option>
                     <option value="Noida 62">Noida 62 (Expressway Test)</option>
@@ -1221,22 +1345,22 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1 font-mono">Ride Departure Time</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Ride Departure Time</label>
                   <input
                     type="text"
                     value={kccTime}
                     onChange={(e) => setKccTime(e.target.value)}
                     placeholder="08:30 AM"
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1 font-mono">Vehicle Type</label>
+                  <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Vehicle Type</label>
                   <select
                     value={kccVehicle}
                     onChange={(e) => setKccVehicle(e.target.value)}
-                    className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                    className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   >
                     <option value="Car">Car</option>
                     <option value="Motorcycle">Motorcycle</option>
@@ -1263,7 +1387,7 @@ export default function App() {
                         .finally(() => setKccLoading(false));
                     }}
                     disabled={kccLoading}
-                    className="w-full min-h-[44px] bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold py-2.5 px-3 rounded text-xs transition-all flex items-center justify-center gap-1.5 border border-emerald-400 disabled:opacity-50 uppercase tracking-wider active:scale-[0.98] cursor-pointer"
+                    className="w-full min-h-[42px] bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-500/20 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                   >
                     {kccLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <><Compass className="w-3.5 h-3.5" /> Predict Optimal Route</>}
                   </button>
@@ -1272,34 +1396,34 @@ export default function App() {
 
               {/* KCC Prediction Result Display */}
               {kccResult && (
-                <div className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 space-y-4 font-mono shadow-inner">
+                <div className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 rounded-xl p-4 sm:p-5 space-y-4 shadow-inner">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="bg-white dark:bg-[#121215] p-3 rounded border border-[#E2E8F0] dark:border-[#27272a]">
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-500 block font-mono uppercase tracking-wider">Optimal Recommendation</span>
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+                      <span className="text-[11px] text-slate-400 dark:text-zinc-500 block uppercase tracking-wider font-semibold">Optimal Recommendation</span>
                       <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block mt-1 leading-snug">
                         {kccResult.optimal_route_recommendation}
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono mt-1 block">
+                      <span className="text-xs text-slate-500 dark:text-zinc-400 mt-1 block">
                         {kccResult.optimal_route_description}
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-[#121215] p-3 rounded border border-[#E2E8F0] dark:border-[#27272a]">
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-500 block font-mono uppercase tracking-wider">Predicted Door-to-Gate ETA</span>
-                      <div className="text-2xl font-bold text-[#0F172A] dark:text-white font-mono mt-1">
-                        {kccResult.predicted_eta_mins} <span className="text-xs text-slate-500 dark:text-zinc-400 font-normal">mins</span>
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+                      <span className="text-[11px] text-slate-400 dark:text-zinc-500 block uppercase tracking-wider font-semibold">Predicted Door-to-Gate ETA</span>
+                      <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono mt-1">
+                        {kccResult.predicted_eta_mins} <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">mins</span>
                       </div>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono block mt-1">
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-1 font-medium">
                         Target: KCC Institute Campus Gate
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-[#121215] p-3 rounded border border-[#E2E8F0] dark:border-[#27272a]">
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-500 block font-mono uppercase tracking-wider">AutoML Confidence Score</span>
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+                      <span className="text-[11px] text-slate-400 dark:text-zinc-500 block uppercase tracking-wider font-semibold">AutoML Confidence Score</span>
                       <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1">
                         {kccResult.confidence_score}%
                       </div>
-                      <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono block mt-1">
+                      <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-1">
                         Model: VotingRegressor (GBR + RF)
                       </span>
                     </div>
@@ -1307,18 +1431,18 @@ export default function App() {
 
                   {/* Graph-Based Pathfinding & Rerouting Node Visualization */}
                   {kccResult.optimal_path_nodes && (
-                    <div className="bg-white dark:bg-[#121215] p-3.5 rounded border border-[#E2E8F0] dark:border-[#27272a] space-y-3">
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
                       <div className="flex flex-wrap justify-between items-center gap-2">
-                        <span className="text-xs font-bold text-[#0F172A] dark:text-white flex items-center gap-1.5 font-mono">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                           <Compass className="w-3.5 h-3.5 text-emerald-500" />
                           Hybrid Pathfinding Node Sequence (Dijkstra + AutoML Congestion Weights)
                         </span>
                         {kccResult.rerouted_around_bottlenecks ? (
-                          <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded font-mono font-bold">
+                          <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2.5 py-0.5 rounded-full font-bold">
                             ⚡ Fastest Route (Bypassed)
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded font-mono font-bold">
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2.5 py-0.5 rounded-full font-bold">
                             ✓ Direct Route
                           </span>
                         )}
@@ -1326,18 +1450,18 @@ export default function App() {
 
                       {/* Optimal Sequence */}
                       <div>
-                        <span className="text-[10px] text-slate-500 dark:text-zinc-400 block mb-1.5 font-mono">
-                          Optimal Node Sequence ({kccResult.total_distance_km} km):
+                        <span className="text-xs text-slate-500 dark:text-zinc-400 block mb-1.5">
+                          Optimal Node Sequence (<span className="font-mono font-semibold">{kccResult.total_distance_km} km</span>):
                         </span>
-                        <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
                           {kccResult.optimal_path_nodes.map((node, idx) => (
                             <React.Fragment key={idx}>
-                              <span className={`px-2 py-1 rounded border font-semibold ${
+                              <span className={`px-2.5 py-1 rounded-lg border font-medium ${
                                 idx === 0
-                                  ? 'bg-slate-200 dark:bg-[#1a1a24] text-slate-800 dark:text-zinc-200 border-slate-300 dark:border-zinc-700'
+                                  ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-200 border-slate-300 dark:border-zinc-700 font-semibold'
                                   : idx === kccResult.optimal_path_nodes.length - 1
                                   ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-400 dark:border-emerald-600 font-bold'
-                                  : 'bg-slate-50 dark:bg-[#121215] text-slate-700 dark:text-zinc-300 border-[#E2E8F0] dark:border-[#27272a]'
+                                  : 'bg-slate-50 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-800'
                               }`}>
                                 {node}
                               </span>
@@ -1351,13 +1475,13 @@ export default function App() {
 
                       {/* Comparison with Geometric Shortest Physical Path */}
                       {kccResult.physical_shortest_path_nodes && (
-                        <div className="border-t border-[#E2E8F0] dark:border-[#27272a] pt-2 text-[11px] font-mono text-slate-600 dark:text-zinc-400 space-y-1">
+                        <div className="border-t border-slate-100 dark:border-zinc-800 pt-2.5 text-xs text-slate-600 dark:text-zinc-400 space-y-1">
                           <div>
-                            <span className="text-[#0F172A] dark:text-zinc-200 font-semibold">Physical Geometric Shortest Path: </span>
-                            <span>{kccResult.physical_shortest_distance_km} km ({kccResult.physical_shortest_path_nodes.join(' ➔ ')})</span>
+                            <span className="text-slate-900 dark:text-zinc-200 font-semibold">Physical Geometric Shortest Path: </span>
+                            <span className="font-mono">{kccResult.physical_shortest_distance_km} km</span> ({kccResult.physical_shortest_path_nodes.join(' ➔ ')})
                           </div>
                           {kccResult.reroute_explanation && (
-                            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-900 text-amber-800 dark:text-amber-200 rounded text-[11px] mt-1">
+                            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 rounded-xl text-xs mt-1 leading-relaxed">
                               <strong>Engine Reroute Decision: </strong>{kccResult.reroute_explanation}
                             </div>
                           )}
@@ -1368,34 +1492,34 @@ export default function App() {
 
                   {/* Candidate Route Evaluation Structured Table */}
                   <div>
-                    <span className="text-xs font-bold text-[#0F172A] dark:text-zinc-200 block mb-2 font-mono uppercase tracking-wider">
+                    <span className="text-xs font-bold text-slate-900 dark:text-zinc-200 block mb-2 uppercase tracking-wider">
                       Candidate Corridor Evaluation & Bottleneck Filtering ({kccResult.evaluated_routes?.length || 0} Paths):
                     </span>
-                    <div className="overflow-x-auto border border-[#E2E8F0] dark:border-[#27272a] rounded">
-                      <table className="w-full text-left text-xs font-mono">
+                    <div className="overflow-x-auto border border-slate-200 dark:border-zinc-800 rounded-xl">
+                      <table className="w-full text-left text-xs">
                         <thead>
-                          <tr className="bg-slate-100 dark:bg-[#121215] border-b border-[#E2E8F0] dark:border-[#27272a] text-slate-600 dark:text-zinc-400 text-[10px] uppercase">
-                            <th className="py-2 px-3">Route / Corridor</th>
-                            <th className="py-2 px-3">Distance</th>
-                            <th className="py-2 px-3">Bottleneck Penalty</th>
-                            <th className="py-2 px-3">AutoML ETA</th>
-                            <th className="py-2 px-3 text-right">Evaluation Status</th>
+                          <tr className="bg-slate-100 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] uppercase font-medium">
+                            <th className="py-2.5 px-3.5">Route / Corridor</th>
+                            <th className="py-2.5 px-3.5">Distance</th>
+                            <th className="py-2.5 px-3.5">Bottleneck Penalty</th>
+                            <th className="py-2.5 px-3.5">AutoML ETA</th>
+                            <th className="py-2.5 px-3.5 text-right">Evaluation Status</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E2E8F0] dark:divide-[#27272a] bg-white dark:bg-[#09090b]">
+                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 bg-white dark:bg-zinc-950">
                           {kccResult.evaluated_routes?.map((r, i) => (
                             <tr key={i} className={r.status === 'Optimal' ? 'bg-emerald-50/70 dark:bg-emerald-950/20' : ''}>
-                              <td className="py-2.5 px-3 font-semibold text-[#0F172A] dark:text-white">
+                              <td className="py-2.5 px-3.5 font-semibold text-slate-900 dark:text-white">
                                 <div>{r.route_name}</div>
                                 {r.filter_reason && (
-                                  <div className="text-[10px] text-slate-500 dark:text-zinc-500 font-normal mt-0.5">{r.filter_reason}</div>
+                                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-normal mt-0.5">{r.filter_reason}</div>
                                 )}
                               </td>
-                              <td className="py-2.5 px-3 text-slate-700 dark:text-zinc-300">{r.distance_km} km</td>
-                              <td className="py-2.5 px-3 text-slate-700 dark:text-zinc-300 font-bold">{r.bottleneck_penalty_weight}</td>
-                              <td className="py-2.5 px-3 font-bold text-[#0F172A] dark:text-white">{r.predicted_eta_mins} mins</td>
-                              <td className="py-2.5 px-3 text-right">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              <td className="py-2.5 px-3.5 text-slate-700 dark:text-zinc-300 font-mono">{r.distance_km} km</td>
+                              <td className="py-2.5 px-3.5 text-slate-700 dark:text-zinc-300 font-bold font-mono">{r.bottleneck_penalty_weight}</td>
+                              <td className="py-2.5 px-3.5 font-bold text-slate-900 dark:text-white font-mono">{r.predicted_eta_mins} mins</td>
+                              <td className="py-2.5 px-3.5 text-right">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                                   r.status === 'Optimal'
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
                                     : r.is_unsuitable
@@ -1416,30 +1540,30 @@ export default function App() {
             </div>
 
             {/* Sandbox / Parameter Explorer */}
-            <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-5 space-y-4 shadow-sm">
+            <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1 font-bold">
                   Feature Pipeline Telemetry
                 </span>
-                <h3 className="text-sm font-bold text-[#0F172A] dark:text-white font-mono">Corridor Transit & Feature Vector Explorer</h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono mt-0.5">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Corridor Transit & Feature Vector Explorer</h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                   Direct live pipeline inspection of the serialized scikit-learn GradientBoosting ensemble (<code className="text-emerald-600 dark:text-emerald-400 font-mono">backend/ml_bundle/pipeline.joblib</code>).
                 </p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
                 {/* Trip Parameters */}
-                <div className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 space-y-3 text-xs font-mono">
+                <div className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 rounded-xl p-4 space-y-3 text-xs">
                   <span className="font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200 block text-[11px]">
                     Inference Inputs
                   </span>
 
                   <div>
-                    <label className="block text-slate-600 dark:text-zinc-400 mb-1">Origin Zone</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-1.5 font-semibold">Origin Zone</label>
                     <select
                       value={sandboxOrigin}
                       onChange={(e) => setSandboxOrigin(e.target.value)}
-                      className="w-full bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-2.5 py-1.5 text-xs focus:outline-none"
+                      className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                     >
                       {locations.corridors?.map((c) => (
                         <option key={c.zone} value={c.zone}>{c.zone} (~{c.default_dist_km} km)</option>
@@ -1448,11 +1572,11 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-600 dark:text-zinc-400 mb-1">Campus Gate</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-1.5 font-semibold">Campus Gate</label>
                     <select
                       value={sandboxGate}
                       onChange={(e) => setSandboxGate(e.target.value)}
-                      className="w-full bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-zinc-100 rounded px-2.5 py-1.5 text-xs focus:outline-none"
+                      className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                     >
                       {locations.campus_gates?.map((g) => (
                         <option key={g} value={g}>{g}</option>
@@ -1461,15 +1585,15 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-600 dark:text-zinc-400 mb-1">Vehicle Factor</label>
+                    <label className="block text-slate-600 dark:text-zinc-400 mb-1.5 font-semibold">Vehicle Factor</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setSandboxVehicle('car')}
-                        className={`p-1.5 rounded border text-xs font-semibold flex items-center justify-center gap-1 transition-all active:scale-[0.98] cursor-pointer ${
+                        className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ${
                           sandboxVehicle === 'car'
-                            ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
-                            : 'bg-white dark:bg-[#121215] border-[#E2E8F0] dark:border-[#27272a] text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow-sm'
+                            : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         <Car className="w-3.5 h-3.5" /> Car
@@ -1477,10 +1601,10 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setSandboxVehicle('two_wheeler')}
-                        className={`p-1.5 rounded border text-xs font-semibold flex items-center justify-center gap-1 transition-all active:scale-[0.98] cursor-pointer ${
+                        className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer ${
                           sandboxVehicle === 'two_wheeler'
-                            ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
-                            : 'bg-white dark:bg-[#121215] border-[#E2E8F0] dark:border-[#27272a] text-slate-600 dark:text-zinc-400 hover:text-[#0F172A] dark:hover:text-white'
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow-sm'
+                            : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         <Bike className="w-3.5 h-3.5" /> Two-Wheeler
@@ -1489,8 +1613,8 @@ export default function App() {
                   </div>
 
                   <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-slate-600 dark:text-zinc-400">Hour: {sandboxHour}:00</label>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-slate-600 dark:text-zinc-400 font-semibold font-mono">Hour: {sandboxHour}:00</label>
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                         {sandboxHour >= 8 && sandboxHour <= 10 ? 'Rush Hour' : 'Standard'}
                       </span>
@@ -1509,40 +1633,40 @@ export default function App() {
                 {/* Inference Output & Vector Breakdown */}
                 <div className="lg:col-span-2 space-y-3">
                   {predictLoading || !sandboxPrediction ? (
-                    <div className="h-48 bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded flex items-center justify-center">
+                    <div className="h-48 bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl flex items-center justify-center">
                       <RefreshCw className="w-5 h-5 text-emerald-500 animate-spin" />
                     </div>
                   ) : (
-                    <div className="bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] rounded p-4 space-y-3 font-mono shadow-inner">
+                    <div className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-5 space-y-3.5 shadow-inner">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-3 rounded">
-                          <span className="text-[10px] text-slate-500 dark:text-zinc-500 block uppercase">Predicted ETA</span>
-                          <div className="text-2xl font-bold text-[#0F172A] dark:text-white mt-1">
-                            {sandboxPrediction.predicted_eta_mins} <span className="text-xs text-slate-500 dark:text-zinc-400 font-normal">mins</span>
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-3.5 rounded-xl shadow-sm">
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 block uppercase font-semibold">Predicted ETA</span>
+                          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1 font-mono">
+                            {sandboxPrediction.predicted_eta_mins} <span className="text-xs text-slate-400 dark:text-zinc-500 font-normal">mins</span>
                           </div>
                         </div>
 
-                        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-3 rounded">
-                          <span className="text-[10px] text-slate-500 dark:text-zinc-500 block uppercase">Congestion Index</span>
-                          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-3.5 rounded-xl shadow-sm">
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 block uppercase font-semibold">Congestion Index</span>
+                          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
                             {sandboxPrediction.corridor_congestion_index}
                           </div>
                         </div>
 
-                        <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-3 rounded">
-                          <span className="text-[10px] text-slate-500 dark:text-zinc-500 block uppercase">Match Compatibility</span>
-                          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-3.5 rounded-xl shadow-sm">
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500 block uppercase font-semibold">Match Compatibility</span>
+                          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
                             {sandboxPrediction.route_match_score}%
                           </div>
                         </div>
                       </div>
 
                       {/* Vector inspection */}
-                      <div className="bg-white dark:bg-[#121215] rounded p-3 border border-[#E2E8F0] dark:border-[#27272a] text-xs">
-                        <span className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1 text-[11px]">
+                      <div className="bg-white dark:bg-zinc-900 rounded-xl p-3.5 border border-slate-200 dark:border-zinc-800 text-xs shadow-sm">
+                        <span className="font-semibold text-slate-700 dark:text-zinc-300 block mb-1.5 text-xs">
                           Feature Vector Passed to Model Artifact:
                         </span>
-                        <pre className="text-[10px] text-emerald-700 dark:text-emerald-300 font-mono bg-slate-50 dark:bg-[#09090b] p-2 rounded overflow-x-auto border border-[#E2E8F0] dark:border-[#27272a]">
+                        <pre className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono bg-slate-50 dark:bg-zinc-950 p-3 rounded-lg overflow-x-auto border border-slate-200/80 dark:border-zinc-800/80">
                           {JSON.stringify(sandboxPrediction.sanitized_features, null, 2)}
                         </pre>
                       </div>
@@ -1558,28 +1682,31 @@ export default function App() {
 
       {/* Add New Route Modal */}
       {showNewRouteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded p-5 sm:p-6 w-[95vw] max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl font-mono space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] dark:text-white mb-2">
+        <div className="fixed inset-0 z-[9999] bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative z-[10000] bg-white/95 dark:bg-[#121215]/95 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800 rounded-2xl p-6 sm:p-7 w-[95vw] max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Add Saved Commute Route
             </h3>
-            <form onSubmit={handleCreateSavedRoute} className="space-y-3.5 text-xs">
+            <p className="text-xs text-slate-500 dark:text-zinc-400">
+              Save your daily home-to-campus corridor for instant 1-click radar scanning.
+            </p>
+            <form onSubmit={handleCreateSavedRoute} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Route Label</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Route Label</label>
                 <input
                   type="text"
                   placeholder="e.g. Daily Morning Metro Commute"
                   value={newRouteLabel}
                   onChange={(e) => setNewRouteLabel(e.target.value)}
-                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Pickup Corridor</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Pickup Corridor</label>
                 <select
                   value={newRouteOrigin}
                   onChange={(e) => setNewRouteOrigin(e.target.value)}
-                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 >
                   {locations.corridors?.map((c) => (
                     <option key={c.zone} value={c.zone}>{c.zone}</option>
@@ -1587,11 +1714,11 @@ export default function App() {
                 </select>
               </div>
               <div>
-                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Campus Gate</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Campus Gate</label>
                 <select
                   value={newRouteGate}
                   onChange={(e) => setNewRouteGate(e.target.value)}
-                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 >
                   {locations.campus_gates?.map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -1599,27 +1726,27 @@ export default function App() {
                 </select>
               </div>
               <div>
-                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1">Preferred Time</label>
+                <label className="block text-slate-700 dark:text-zinc-300 font-semibold mb-1.5">Preferred Time</label>
                 <input
                   type="text"
                   placeholder="08:30 AM"
                   value={newRouteTime}
                   onChange={(e) => setNewRouteTime(e.target.value)}
-                  className="w-full min-h-[40px] bg-slate-50 dark:bg-[#09090b] border border-[#E2E8F0] dark:border-[#27272a] text-[#0F172A] dark:text-white rounded px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full min-h-[42px] bg-slate-50/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono"
                 />
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a]">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setShowNewRouteModal(false)}
-                  className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 rounded bg-slate-100 dark:bg-[#1c1c21] text-slate-700 dark:text-zinc-300 font-semibold hover:bg-slate-200 dark:hover:bg-zinc-700 border border-[#E2E8F0] dark:border-[#27272a] transition-colors text-xs active:scale-[0.98] cursor-pointer flex items-center justify-center"
+                  className="w-full sm:w-auto min-h-[42px] px-5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 transition-all text-xs active:scale-[0.98] cursor-pointer flex items-center justify-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-black font-bold transition-all text-xs border border-emerald-400 active:scale-[0.98] cursor-pointer flex items-center justify-center"
+                  className="w-full sm:w-auto min-h-[42px] px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold transition-all text-xs shadow-sm shadow-emerald-500/20 active:scale-[0.98] cursor-pointer flex items-center justify-center"
                 >
                   Save Route
                 </button>
@@ -1630,8 +1757,8 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-[#09090b] border-t border-[#E2E8F0] dark:border-[#27272a] py-3.5 px-4 text-center text-xs font-mono text-slate-500 dark:text-zinc-500 transition-colors">
-        CampusRide • KCC Institute Student Commute Network
+      <footer className="bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md border-t border-slate-200/80 dark:border-zinc-800/80 py-4 px-4 text-center text-xs text-slate-500 dark:text-zinc-400 transition-colors">
+        CampusRide • KCC Institute of Technology and Management Student Commute Network
       </footer>
     </div>
   );

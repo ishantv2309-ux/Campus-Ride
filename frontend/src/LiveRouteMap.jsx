@@ -229,76 +229,71 @@ export default function LiveRouteMap({
   }, [userLocation]);
 
   return (
-    <div className={`bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] rounded overflow-hidden shadow-sm transition-colors w-full ${className}`}>
-      {/* Map Header Bar */}
-      <div className="px-3.5 py-2.5 border-b border-[#E2E8F0] dark:border-[#27272a] bg-slate-50 dark:bg-[#09090b] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <Navigation className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span className="font-bold text-[#0F172A] dark:text-white uppercase tracking-wider text-[11px]">
-            Live Commuter Radar & GPS
-          </span>
-          <span className="hidden sm:inline-block text-[10px] text-slate-500 dark:text-zinc-400">
-            • KCC ITM Corridor Network
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Geolocation Status / Trigger */}
-          {userLocation ? (
-            <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded font-semibold">
-              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-              <span>GPS Active (±{Math.round(userLocation.accuracy || 10)}m)</span>
-            </div>
-          ) : locationError ? (
-            <button
-              type="button"
-              onClick={onRequestLocation}
-              title={locationError}
-              className="flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 px-2 py-0.5 rounded cursor-pointer"
-            >
-              <AlertCircle className="w-3 h-3" />
-              <span>Retry GPS</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onRequestLocation}
-              disabled={isLocating}
-              className="flex items-center gap-1 text-[10px] text-slate-700 dark:text-zinc-300 bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] hover:border-emerald-500 px-2 py-0.5 rounded transition-all cursor-pointer"
-            >
-              <Compass className={`w-3 h-3 text-emerald-500 ${isLocating ? 'animate-spin' : ''}`} />
-              <span>{isLocating ? 'Locating...' : 'Enable GPS'}</span>
-            </button>
-          )}
-
-          {/* Quick Center on Campus */}
-          <button
-            type="button"
-            onClick={() => onSelectHub && onSelectHub('All Hubs')}
-            className="text-[10px] text-slate-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 underline cursor-pointer"
-          >
-            Reset View
-          </button>
+    <div className={`isolate relative z-0 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-zinc-800/80 bg-slate-100 dark:bg-zinc-950 shadow-sm transition-all w-full group ${className}`}>
+      {/* Floating Top-Left Status Pill */}
+      <div className="absolute top-3 left-3 z-20 pointer-events-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 shadow-md text-xs font-sans">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          <span className="font-semibold text-slate-900 dark:text-white">KCC Corridor Radar</span>
+          <span className="text-slate-400 dark:text-zinc-500 text-[11px] hidden sm:inline">• Live Commuter GPS</span>
         </div>
       </div>
 
-      {/* Geolocation Telemetry Banner (when available) */}
+      {/* Floating Top-Right Controls */}
+      <div className="absolute top-3 right-3 z-20 pointer-events-auto flex items-center gap-1.5">
+        {userLocation ? (
+          <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-emerald-300/80 dark:border-emerald-700/80 px-3 py-1.5 rounded-full font-medium shadow-md">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>GPS Active (±{Math.round(userLocation.accuracy || 10)}m)</span>
+          </div>
+        ) : locationError ? (
+          <button
+            type="button"
+            onClick={onRequestLocation}
+            title={locationError}
+            className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-amber-300/80 dark:border-amber-700/80 px-3 py-1.5 rounded-full font-medium shadow-md cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40"
+          >
+            <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span>Retry GPS</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onRequestLocation}
+            disabled={isLocating}
+            className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 hover:border-emerald-500 px-3 py-1.5 rounded-full font-medium shadow-md transition-all cursor-pointer active:scale-[0.98]"
+          >
+            <Compass className={`w-3.5 h-3.5 text-emerald-500 shrink-0 ${isLocating ? 'animate-spin' : ''}`} />
+            <span>{isLocating ? 'Locating...' : 'Enable GPS'}</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onSelectHub && onSelectHub('All Hubs')}
+          className="text-xs text-slate-700 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-zinc-700/80 hover:text-emerald-600 dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-full font-medium shadow-md transition-all cursor-pointer active:scale-[0.98]"
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Floating Bottom Telemetry Banner (when available) */}
       {userLocation && nearestHub && (
-        <div className="px-3.5 py-1.5 bg-sky-50 dark:bg-[#07131e] border-b border-sky-200 dark:border-sky-900/60 text-[11px] font-mono flex flex-wrap items-center justify-between gap-1 text-sky-900 dark:text-sky-300">
-          <div className="flex items-center gap-1.5 truncate">
-            <MapPin className="w-3 h-3 text-sky-500 shrink-0" />
-            <span>
-              Nearest Hub: <strong>{nearestHub.fullTitle}</strong> (~{nearestHub.distanceToUser} km from you)
+        <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 z-20 pointer-events-auto">
+          <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-2 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-sky-200/90 dark:border-sky-800/80 shadow-lg text-xs font-sans text-sky-950 dark:text-sky-200 max-w-md">
+            <div className="flex items-center gap-1.5 truncate">
+              <MapPin className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+              <span>Nearest: <strong>{nearestHub.fullTitle}</strong> (~{nearestHub.distanceToUser} km)</span>
+            </div>
+            <span className="text-[11px] text-sky-700 dark:text-sky-400 font-mono">
+              • Direct: ~{calculateDistance(userLocation.lat, userLocation.lng, KCC_DESTINATION.lat, KCC_DESTINATION.lng)} km
             </span>
           </div>
-          <span className="text-[10px] text-sky-700 dark:text-sky-400">
-            Straight-line to KCC ITM: ~{calculateDistance(userLocation.lat, userLocation.lng, KCC_DESTINATION.lat, KCC_DESTINATION.lng)} km
-          </span>
         </div>
       )}
 
       {/* Leaflet Map Surface */}
-      <div className={`w-full relative z-0 ${compact ? 'h-52 sm:h-64' : 'h-64 sm:h-80'}`}>
+      <div className={`w-full relative z-0 ${compact ? 'h-56 sm:h-64' : 'h-72 sm:h-84'}`}>
         <MapContainer
           center={mapCenter}
           zoom={mapZoom}
