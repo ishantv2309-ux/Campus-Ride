@@ -765,6 +765,17 @@ export default function App() {
               )}
             </button>
 
+            {/* Standalone Refresh Live State Button */}
+            <button
+              type="button"
+              onClick={refreshDashboard}
+              title="Refresh Live State"
+              aria-label="Refresh Live State"
+              className="p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer shadow-sm shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingFeed ? 'animate-spin text-emerald-500' : ''}`} />
+            </button>
+
             {/* Student Profile Identity Badge with Academic Trust Cue */}
             <div className="flex-1 sm:flex-initial flex items-center gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 px-2.5 sm:px-3 py-1 min-h-[38px] rounded-full text-xs min-w-0 shadow-sm">
               <div className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-[11px] shrink-0">
@@ -794,10 +805,10 @@ export default function App() {
 
       {/* Sub-Header & Sleek Pill-Segmented Mode Navigation */}
       <div className="bg-slate-50/70 dark:bg-[#09090b]/70 backdrop-blur-sm border-b border-slate-200/80 dark:border-zinc-800/80 py-2 sm:py-2.5 px-3 sm:px-6 transition-colors w-full -mx-3 sm:-mx-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-          {/* Mode Switcher: Sleek Pill-Segmented Control */}
-          <div className="flex-1 min-w-0 flex overflow-x-auto whitespace-nowrap gap-2 pb-2 -mx-3 px-3 scrollbar-none">
-            <div className="inline-flex w-auto min-w-full sm:min-w-0 p-1 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
+        <div className="max-w-7xl mx-auto flex items-center">
+          {/* Mode Switcher: Sleek Pill-Segmented Control with pr-6 for unclipped swipe */}
+          <div className="flex-1 min-w-0 flex overflow-x-auto whitespace-nowrap gap-2 pb-1 -mx-3 px-3 pr-6 scrollbar-none">
+            <div className="inline-flex w-auto min-w-full sm:min-w-0 p-1 pr-6 bg-slate-100/90 dark:bg-zinc-900/90 rounded-full border border-slate-200/80 dark:border-zinc-800 shadow-inner whitespace-nowrap">
               <button
                 type="button"
                 onClick={() => setActiveTab('rider')}
@@ -836,17 +847,6 @@ export default function App() {
               </button>
             </div>
           </div>
-
-          <div className="shrink-0 flex items-center justify-end gap-2">
-            <button
-              onClick={refreshDashboard}
-              title="Refresh Live State"
-              aria-label="Refresh Live State"
-              className="p-2 sm:p-2 rounded-full min-h-[36px] min-w-[36px] flex items-center justify-center bg-white/80 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white active:scale-[0.98] transition-all cursor-pointer shadow-sm"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingFeed ? 'animate-spin text-emerald-500' : ''}`} />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -855,19 +855,25 @@ export default function App() {
 
         {/* 1. SAVED ROUTES SECTION */}
         <div className="bg-white/85 dark:bg-[#121215]/85 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 rounded-2xl p-4 sm:p-6 transition-all shadow-sm w-full">
-          <div className="flex justify-between items-center mb-3.5">
-            <div className="flex items-center gap-2">
-              <Bookmark className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Saved Commute Corridors</h2>
-              <span className="text-[11px] bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700/80 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-full font-medium">
+          <div className="flex items-center justify-between gap-2 mb-3.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Bookmark className="w-4 h-4 text-emerald-500 shrink-0" />
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">Saved Commute Corridors</h2>
+                <span className="hidden sm:inline-flex text-[10px] sm:text-[11px] bg-slate-100 dark:bg-zinc-800/90 border border-slate-200 dark:border-zinc-700/80 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-full font-medium whitespace-nowrap shrink-0">
+                  1-Click Autofill
+                </span>
+              </div>
+              <span className="sm:hidden text-[10px] text-slate-500 dark:text-zinc-400 block mt-0.5 ml-5 font-medium whitespace-nowrap shrink-0">
                 1-Click Autofill
               </span>
             </div>
             <button
               onClick={() => setShowNewRouteModal(true)}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 font-semibold cursor-pointer"
+              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 font-semibold cursor-pointer whitespace-nowrap shrink-0"
             >
-              <PlusCircle className="w-3.5 h-3.5" /> Add Corridor
+              <PlusCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>Add Corridor</span>
             </button>
           </div>
 
@@ -876,25 +882,27 @@ export default function App() {
               No saved routes yet. Add your daily home commute corridor for 1-click autofill.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
               {savedRoutes.map((route) => (
                 <div
                   key={route.id}
-                  className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 p-4 rounded-xl flex flex-col justify-between transition-all"
+                  className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 p-3.5 rounded-xl flex flex-col gap-3 transition-all"
                 >
-                  <div>
-                    <div className="font-semibold text-xs text-slate-900 dark:text-white mb-1.5 flex items-center justify-between gap-2">
-                      <span className="truncate">{route.route_label}</span>
-                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-bold shrink-0">{route.preferred_time}</span>
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1 truncate mb-2">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{route.origin_zone}</span>
-                      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-zinc-600" />
-                      <span className="text-slate-600 dark:text-zinc-400 truncate">{route.campus_gate}</span>
-                    </div>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                      {route.route_label}
+                    </span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-bold shrink-0">
+                      {route.preferred_time}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200/60 dark:border-zinc-800/80">
+                  <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1 min-w-0">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{route.origin_zone}</span>
+                    <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-zinc-600" />
+                    <span className="text-slate-600 dark:text-zinc-400 truncate">{route.campus_gate}</span>
+                  </div>
+                  <div className="flex items-center gap-2 w-full pt-2 border-t border-slate-200/60 dark:border-zinc-800/80">
                     <button
                       type="button"
                       disabled={scanningRouteId === route.id}
@@ -908,7 +916,7 @@ export default function App() {
                       {scanningRouteId === route.id ? (
                         <>
                           <Radar className="w-3.5 h-3.5 text-emerald-500 animate-spin shrink-0" />
-                          <span className="truncate">Scanning Corridor Radar...</span>
+                          <span className="truncate">Scanning Radar...</span>
                         </>
                       ) : (
                         <>
@@ -923,7 +931,7 @@ export default function App() {
                       onClick={(e) => handleDeleteSavedRoute(route.id, e)}
                       title="Remove saved corridor"
                       aria-label="Remove saved corridor"
-                      className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-800 text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-sm shrink-0"
+                      className="shrink-0 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-800 text-xs font-medium transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer disabled:opacity-50 shadow-sm"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                       <span>Remove</span>
@@ -979,37 +987,39 @@ export default function App() {
                 </div>
               )}
 
-              {/* Hub Quick-Filter Bar - Horizontally scrollable on mobile with sleek pill styling */}
-              <div className="bg-white/80 dark:bg-[#121215]/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none text-xs shadow-sm w-full min-w-0">
-                <span className="text-slate-500 dark:text-zinc-400 text-[11px] font-medium uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1 pl-1">
-                  <Filter className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Hubs:
-                </span>
-                {['All Hubs', 'Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].map((hub) => {
-                  const isNearest = detectedAutoHub === hub && hub !== 'All Hubs';
-                  return (
-                    <button
-                      key={hub}
-                      type="button"
-                      onClick={() => handleHubSelect(hub)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
-                        selectedHubFilter === hub
-                          ? 'bg-emerald-500 text-slate-950 font-semibold shadow-sm shadow-emerald-500/20'
-                          : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <span>{hub}</span>
-                      {isNearest && (
-                        <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded-full font-bold ${
+              {/* Hub Quick-Filter Bar - Smooth horizontal scroll container */}
+              <div className="bg-white/80 dark:bg-[#121215]/80 backdrop-blur-md border border-slate-200/80 dark:border-zinc-800/80 p-2 sm:p-2.5 rounded-2xl shadow-sm w-full min-w-0">
+                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none pr-4">
+                  <span className="text-slate-500 dark:text-zinc-400 text-[11px] font-medium uppercase tracking-wider shrink-0 flex items-center gap-1 pl-1">
+                    <Filter className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Hubs:
+                  </span>
+                  {['All Hubs', 'Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].map((hub) => {
+                    const isNearest = detectedAutoHub === hub && hub !== 'All Hubs';
+                    return (
+                      <button
+                        key={hub}
+                        type="button"
+                        onClick={() => handleHubSelect(hub)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 ${
                           selectedHubFilter === hub
-                            ? 'bg-black/20 text-slate-950'
-                            : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300/50 dark:border-emerald-700/50'
-                        }`}>
-                          Nearest
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                            ? 'bg-emerald-500 text-slate-950 font-semibold shadow-sm shadow-emerald-500/20'
+                            : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <span>{hub}</span>
+                        {isNearest && (
+                          <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
+                            selectedHubFilter === hub
+                              ? 'bg-black/20 text-slate-950'
+                              : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300/50 dark:border-emerald-700/50'
+                          }`}>
+                            Nearest
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {filteredRides.length === 0 ? (
