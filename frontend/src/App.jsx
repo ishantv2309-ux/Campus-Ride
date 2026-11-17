@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AuthView from './AuthView.jsx';
-import LiveRouteMap from './LiveRouteMap.jsx';
+import LiveRouteMap, { getNearestHub } from './LiveRouteMap.jsx';
 import { useGeolocation } from './useGeolocation.js';
 import {
   Car,
@@ -70,7 +70,11 @@ export default function App() {
   // UI Navigation Mode: 'welcome' (if no token) | 'rider' | 'driver' | 'matcher'
   const [activeTab, setActiveTab] = useState('rider');
   const [notification, setNotification] = useState(null);
-  const [selectedHubFilter, setSelectedHubFilter] = useState('All Hubs');
+  
+  // Intelligent Pickup Hub Default (defaults to primary corridor instead of forcing 'All Hubs')
+  const [selectedHubFilter, setSelectedHubFilter] = useState('Noida 62');
+  const [detectedAutoHub, setDetectedAutoHub] = useState('Noida 62');
+  const userManuallyChangedHubRef = useRef(false);
   const [showLiveMap, setShowLiveMap] = useState(true);
 
   // Live GPS Geolocation Hook (Prompts on initial dispatch view access)
@@ -102,6 +106,40 @@ export default function App() {
   const [myBookings, setMyBookings] = useState([]);
   const [myPostedRides, setMyPostedRides] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+
+  // Intelligently detect nearest pickup hub from GPS coordinates
+  useEffect(() => {
+    if (userLocation?.lat && userLocation?.lng) {
+      const nearest = getNearestHub(userLocation.lat, userLocation.lng);
+      if (nearest?.name) {
+        setDetectedAutoHub(nearest.name);
+        if (!userManuallyChangedHubRef.current) {
+          setSelectedHubFilter(nearest.name);
+        }
+      }
+    }
+  }, [userLocation]);
+
+  // Fallback to user's primary configured commuter corridor if GPS is not yet loaded
+  useEffect(() => {
+    if (!userLocation && savedRoutes?.length > 0 && !userManuallyChangedHubRef.current) {
+      const primaryOrigin = savedRoutes[0]?.origin_zone;
+      if (primaryOrigin) {
+        const match = ['Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].find(
+          h => primaryOrigin.toLowerCase().includes(h.toLowerCase())
+        );
+        if (match) {
+          setDetectedAutoHub(match);
+          setSelectedHubFilter(match);
+        }
+      }
+    }
+  }, [savedRoutes, userLocation]);
+
+  const handleHubSelect = (hub) => {
+    userManuallyChangedHubRef.current = true;
+    setSelectedHubFilter(hub);
+  };
 
   // Saved Route Modal / Form
   const [showNewRouteModal, setShowNewRouteModal] = useState(false);
@@ -653,7 +691,7 @@ export default function App() {
                 <LiveRouteMap
                   theme={theme}
                   activeHubFilter={selectedHubFilter}
-                  onSelectHub={(hub) => setSelectedHubFilter(hub)}
+                  onSelectHub={(hub) => handleHubSelect(hub)}
                   userLocation={userLocation}
                   isLocating={isLocating}
                   locationError={locationError}
@@ -666,20 +704,32 @@ export default function App() {
                 <span className="text-slate-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
                   <Filter className="w-3 h-3 text-emerald-500 shrink-0" /> Pickup Hub:
                 </span>
-                {['All Hubs', 'Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].map((hub) => (
-                  <button
-                    key={hub}
-                    type="button"
-                    onClick={() => setSelectedHubFilter(hub)}
-                    className={`px-3 py-1.5 sm:py-1 rounded border text-[11px] font-semibold transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 min-h-[36px] sm:min-h-0 flex items-center justify-center ${
-                      selectedHubFilter === hub
-                        ? 'bg-emerald-500 text-black border-emerald-400 font-bold'
-                        : 'bg-slate-50 dark:bg-[#09090b] text-slate-600 dark:text-zinc-400 border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 hover:text-[#0F172A] dark:hover:text-white'
-                    }`}
-                  >
-                    {hub}
-                  </button>
-                ))}
+                {['All Hubs', 'Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].map((hub) => {
+                  const isNearest = detectedAutoHub === hub && hub !== 'All Hubs';
+                  return (
+                    <button
+                      key={hub}
+                      type="button"
+                      onClick={() => handleHubSelect(hub)}
+                      className={`px-3 py-1.5 sm:py-1 rounded border text-[11px] font-semibold transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 min-h-[36px] sm:min-h-0 flex items-center justify-center gap-1.5 ${
+                        selectedHubFilter === hub
+                          ? 'bg-emerald-500 text-black border-emerald-400 font-bold shadow-sm'
+                          : 'bg-slate-50 dark:bg-[#09090b] text-slate-600 dark:text-zinc-400 border-[#E2E8F0] dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 hover:text-[#0F172A] dark:hover:text-white'
+                      }`}
+                    >
+                      <span>{hub}</span>
+                      {isNearest && (
+                        <span className={`text-[8px] uppercase tracking-wider px-1 py-0.2 rounded font-bold ${
+                          selectedHubFilter === hub
+                            ? 'bg-black/20 text-black'
+                            : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300/50 dark:border-emerald-700/50'
+                        }`}>
+                          Nearest
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {filteredRides.length === 0 ? (
