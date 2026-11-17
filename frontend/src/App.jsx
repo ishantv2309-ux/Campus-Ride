@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AuthView from './AuthView.jsx';
+import LiveRouteMap from './LiveRouteMap.jsx';
+import { useGeolocation } from './useGeolocation.js';
 import {
   Car,
   Bike,
@@ -69,6 +71,15 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('rider');
   const [notification, setNotification] = useState(null);
   const [selectedHubFilter, setSelectedHubFilter] = useState('All Hubs');
+  const [showLiveMap, setShowLiveMap] = useState(true);
+
+  // Live GPS Geolocation Hook (Prompts on initial dispatch view access)
+  const {
+    location: userLocation,
+    loading: isLocating,
+    error: locationError,
+    requestLocation,
+  } = useGeolocation(true);
 
   // Metadata
   const [locations, setLocations] = useState({ corridors: [], campus_gates: [], vehicle_types: [] });
@@ -622,10 +633,33 @@ export default function App() {
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono">Verified student driver carpools bound for KCC Institute of Technology & Management</p>
                 </div>
-                <span className="text-xs font-mono bg-white dark:bg-[#121215] text-emerald-600 dark:text-emerald-400 border border-[#E2E8F0] dark:border-emerald-500/30 px-2 py-0.5 rounded font-semibold whitespace-nowrap">
-                  {filteredRides.length} active
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowLiveMap(!showLiveMap)}
+                    className="text-xs font-mono bg-white dark:bg-[#121215] text-[#0F172A] dark:text-zinc-300 border border-[#E2E8F0] dark:border-[#27272a] hover:border-emerald-500 px-2.5 py-1 rounded font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                  >
+                    <Compass className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>{showLiveMap ? 'Hide Radar' : 'Live Radar'}</span>
+                  </button>
+                  <span className="text-xs font-mono bg-white dark:bg-[#121215] text-emerald-600 dark:text-emerald-400 border border-[#E2E8F0] dark:border-emerald-500/30 px-2 py-1 rounded font-semibold whitespace-nowrap">
+                    {filteredRides.length} active
+                  </span>
+                </div>
               </div>
+
+              {/* Live Interactive Corridor Radar & Geolocation Map */}
+              {showLiveMap && (
+                <LiveRouteMap
+                  theme={theme}
+                  activeHubFilter={selectedHubFilter}
+                  onSelectHub={(hub) => setSelectedHubFilter(hub)}
+                  userLocation={userLocation}
+                  isLocating={isLocating}
+                  locationError={locationError}
+                  onRequestLocation={requestLocation}
+                />
+              )}
 
               {/* Hub Quick-Filter Bar - Swipable on mobile with hidden scrollbar */}
               <div className="bg-white dark:bg-[#121215] border border-[#E2E8F0] dark:border-[#27272a] p-2 rounded flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar text-xs font-mono shadow-sm">
@@ -799,6 +833,22 @@ export default function App() {
                         </div>
                       </div>
                     ))}
+
+                    {/* Passenger Live Tracking Map for Active Bookings */}
+                    <div className="mt-4 pt-3 border-t border-[#E2E8F0] dark:border-[#27272a] space-y-2">
+                      <span className="text-[10px] font-mono text-slate-500 dark:text-zinc-400 block uppercase tracking-wider font-semibold">
+                        Live Passenger Route Tracking
+                      </span>
+                      <LiveRouteMap
+                        compact={true}
+                        theme={theme}
+                        activeHubFilter={myBookings[0]?.ride?.origin_zone || 'All Hubs'}
+                        userLocation={userLocation}
+                        isLocating={isLocating}
+                        locationError={locationError}
+                        onRequestLocation={requestLocation}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
