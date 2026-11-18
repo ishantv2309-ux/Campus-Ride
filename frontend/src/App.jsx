@@ -36,7 +36,11 @@ import {
   Trash2,
   X,
   Radar,
-  Radio
+  Radio,
+  Layers,
+  Cpu,
+  Database,
+  Server
 } from 'lucide-react';
 
 // Relative API base path allows frontend to dynamically target the active host
@@ -229,6 +233,10 @@ export default function App() {
   const [newRouteOrigin, setNewRouteOrigin] = useState('');
   const [newRouteGate, setNewRouteGate] = useState('');
   const [newRouteTime, setNewRouteTime] = useState('08:30 AM');
+
+  // Hackathon Polish States (Feature 1, 2, 3)
+  const [showTechStackModal, setShowTechStackModal] = useState(false);
+  const [liveMatchToast, setLiveMatchToast] = useState(null);
 
   // Driver Post Ride Form
   const [postOrigin, setPostOrigin] = useState('');
@@ -620,6 +628,19 @@ export default function App() {
       // 5. Success confirmation toast
       notify('Matched with verified student commuter on this corridor!', 'success');
 
+      // Trigger floating live peer match toast with quick actions (Feature 2)
+      setTimeout(() => {
+        setLiveMatchToast({
+          id: Date.now(),
+          studentName: 'Priya P.',
+          academicTag: 'B.Tech CSE • 2nd Year',
+          corridor: route.origin_zone || matchedHub,
+          destination: route.campus_gate || 'Gate 2 (Main Campus)',
+          time: route.preferred_time || '07:30 AM',
+          role: 'commuter'
+        });
+      }, 500);
+
       // Scroll to available rides section smoothly
       const ridesSection = document.getElementById('available-rides-section');
       if (ridesSection) {
@@ -631,6 +652,222 @@ export default function App() {
         setRadarMatchedCorridor((curr) => (curr === matchedHub ? null : curr));
       }, 8000);
     }, 1800);
+  };
+
+  // Auto-trigger simulated peer request toast 4.5s after load to demonstrate real-time matching
+  useEffect(() => {
+    if (!token || !currentUser) return;
+    const timer = setTimeout(() => {
+      setLiveMatchToast((curr) => {
+        if (curr) return curr;
+        return {
+          id: Date.now(),
+          studentName: 'Priya P.',
+          academicTag: 'B.Tech CSE • 2nd Year',
+          corridor: 'NH-3',
+          destination: 'Gate 2 (Main Campus)',
+          time: '07:30 AM',
+          role: 'commuter'
+        };
+      });
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [token, currentUser]);
+
+  // Feature 1: 1-Click Demo Mode Quick-Start Preset
+  const handleActivateDemoMode = () => {
+    // 1. Pre-fill sample saved corridors
+    const demoCorridors = [
+      {
+        id: 991,
+        route_label: 'NH-3 Express Morning',
+        origin_zone: 'NH-3',
+        campus_gate: 'Gate 2 (Main Campus)',
+        preferred_time: '07:30 AM'
+      },
+      {
+        id: 992,
+        route_label: 'Noida 62 Tech Hub Commute',
+        origin_zone: 'Noida 62',
+        campus_gate: 'Gate 1 (Auditorium)',
+        preferred_time: '08:15 AM'
+      }
+    ];
+    setSavedRoutes(prev => {
+      const existingIds = new Set((prev || []).map(r => r.id));
+      const filteredDemo = demoCorridors.filter(d => !existingIds.has(d.id));
+      const combined = [...filteredDemo, ...(prev || [])];
+      try {
+        safeStorage.setItem('campusride_saved_routes', JSON.stringify(combined));
+      } catch (err) {
+        console.warn('Safe storage demo write:', err);
+      }
+      return combined;
+    });
+
+    // 2. Select NH-3 corridor and activate live radar scan
+    userManuallyChangedHubRef.current = true;
+    setSelectedHubFilter('NH-3');
+    setRadarMatchedCorridor('NH-3');
+    setShowLiveMap(true);
+    setIsMapPulsing(true);
+    setTimeout(() => setIsMapPulsing(false), 2500);
+
+    // 3. Pre-fill Driver Mode parameters
+    setPostOrigin('NH-3');
+    setPostGate('Gate 2 (Main Campus)');
+    setPostTime('07:30 AM');
+    setPostSeats(3);
+    setPostVehicle('car');
+
+    // 4. Populate mock confirmed booking
+    const demoBooking = {
+      booking_id: 881,
+      ride: {
+        id: 771,
+        origin_zone: 'NH-3',
+        destination_gate: 'Gate 2 (Main Campus)',
+        departure_time: '07:30 AM',
+        seats_available: 2,
+        seats_total: 3,
+        vehicle_type: 'car',
+        driver: {
+          id: 661,
+          full_name: 'Aman Sharma',
+          college_email: 'aman.sharma@college.edu.in',
+          phone: '+91 98101 23456'
+        }
+      }
+    };
+    setMyBookings(prev => {
+      if ((prev || []).some(b => b.booking_id === 881)) return prev;
+      return [demoBooking, ...(prev || [])];
+    });
+
+    // 5. Populate mock posted ride with passenger booking in Driver Mode
+    const demoPostedRide = {
+      id: 551,
+      origin_zone: 'NH-3',
+      destination_gate: 'Gate 2 (Main Campus)',
+      departure_time: '07:30 AM',
+      seats_available: 2,
+      seats_total: 3,
+      predicted_eta_mins: 18,
+      vehicle_type: 'car',
+      passenger_bookings: [
+        {
+          booking_id: 441,
+          rider_name: 'Priya Patel',
+          rider_email: 'priya.p@college.edu.in'
+        }
+      ]
+    };
+    setMyPostedRides(prev => {
+      if ((prev || []).some(r => r.id === 551)) return prev;
+      return [demoPostedRide, ...(prev || [])];
+    });
+
+    // 6. Ensure active rides has sample rides populated if empty
+    setActiveRides(prev => {
+      if (prev && prev.length > 0) return prev;
+      return [
+        {
+          id: 771,
+          origin_zone: 'NH-3',
+          destination_gate: 'Gate 2 (Main Campus)',
+          departure_time: '07:30 AM',
+          seats_available: 2,
+          seats_total: 3,
+          predicted_eta_mins: 18,
+          distance_km: 14,
+          vehicle_type: 'car',
+          driver: {
+            id: 661,
+            full_name: 'Aman Sharma',
+            college_email: 'aman.sharma@college.edu.in',
+            phone: '+91 98101 23456'
+          }
+        },
+        {
+          id: 772,
+          origin_zone: 'Noida 62',
+          destination_gate: 'Gate 1 (Auditorium)',
+          departure_time: '08:15 AM',
+          seats_available: 1,
+          seats_total: 2,
+          predicted_eta_mins: 22,
+          distance_km: 18,
+          vehicle_type: 'two_wheeler',
+          driver: {
+            id: 662,
+            full_name: 'Rohan Verma',
+            college_email: 'rohan.v@college.edu.in',
+            phone: '+91 98712 34567'
+          }
+        }
+      ];
+    });
+
+    // 7. Feedback toast
+    notify('⚡ Demo Preset Loaded: NH-3 Corridor & Live Telemetry Active!', 'success');
+
+    // 8. Trigger live peer match toast after 1.5s
+    setTimeout(() => {
+      setLiveMatchToast({
+        id: Date.now(),
+        studentName: 'Priya P.',
+        academicTag: 'B.Tech CSE • 2nd Year',
+        corridor: 'NH-3',
+        destination: 'Gate 2 (Main Campus)',
+        time: '07:30 AM',
+        role: 'commuter'
+      });
+    }, 1500);
+  };
+
+  // Feature 2: Accept Live Peer Match
+  const handleAcceptLiveMatch = (match) => {
+    if (!match) return;
+    const newBooking = {
+      booking_id: Date.now(),
+      ride: {
+        id: match.id || 771,
+        origin_zone: match.corridor || 'NH-3',
+        destination_gate: match.destination || 'Gate 2 (Main Campus)',
+        departure_time: match.time || '07:30 AM',
+        seats_available: 2,
+        seats_total: 3,
+        driver: {
+          id: 661,
+          full_name: 'Aman Sharma',
+          college_email: 'aman.sharma@college.edu.in',
+          phone: '+91 98101 23456'
+        }
+      }
+    };
+    setMyBookings(prev => [newBooking, ...(prev || [])]);
+    notify(`Match Accepted! Seat confirmed with ${match.studentName} on ${match.corridor} corridor.`, 'success');
+    setLiveMatchToast(null);
+  };
+
+  // Feature 2: View Live Match Route
+  const handleViewLiveMatchRoute = (match) => {
+    if (!match) return;
+    setActiveTab('rider');
+    const matchedHub = ['Noida 62', 'NH-3', 'Chapraula', 'Lal Kuan'].find(
+      h => (match.corridor || '').toLowerCase().includes(h.toLowerCase())
+    ) || 'NH-3';
+    userManuallyChangedHubRef.current = true;
+    setSelectedHubFilter(matchedHub);
+    setRadarMatchedCorridor(matchedHub);
+    setShowLiveMap(true);
+    setIsMapPulsing(true);
+    setTimeout(() => setIsMapPulsing(false), 3000);
+    setLiveMatchToast(null);
+    const ridesSection = document.getElementById('available-rides-section');
+    if (ridesSection) {
+      ridesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   // Delete / Remove Saved Corridor Item
@@ -723,18 +960,35 @@ export default function App() {
         <div className="max-w-7xl mx-auto py-2.5 sm:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
           <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 min-w-0 w-full sm:w-auto">
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm">
+              <button
+                type="button"
+                onClick={() => setShowTechStackModal(true)}
+                title="View Hackathon Architecture & Tech Stack"
+                aria-label="View Hackathon Architecture & Tech Stack"
+                className="w-9 h-9 shrink-0 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-xs rounded-xl shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
                 CR
-              </div>
+              </button>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white font-sans">
+                  <button
+                    type="button"
+                    onClick={() => setShowTechStackModal(true)}
+                    title="View Hackathon Architecture & Tech Stack"
+                    className="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white font-sans hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors cursor-pointer text-left"
+                  >
                     CAMPUS<span className="text-emerald-500">RIDE</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowTechStackModal(true)}
+                    title="View Hackathon Architecture & Tech Stack"
+                    className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer"
+                  >
                     <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
                     KCC Verified
-                  </span>
+                    <Info className="w-2.5 h-2.5 ml-0.5 text-emerald-600/70 dark:text-emerald-400/70 shrink-0" />
+                  </button>
                 </div>
                 <span className="text-[11px] text-slate-500 dark:text-zinc-400 block truncate">
                   KCC Institute of Technology & Management • Knowledge Park II
@@ -744,7 +998,18 @@ export default function App() {
           </div>
 
           {/* User Status Bar & Controls */}
-          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t border-slate-100 dark:border-zinc-800/50 sm:border-t-0">
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t border-slate-100 dark:border-zinc-800/50 sm:border-t-0">
+            {/* Feature 1: Demo Mode Quick-Start Preset Button */}
+            <button
+              type="button"
+              onClick={handleActivateDemoMode}
+              title="Activate 1-Click Live Hackathon Demo Preset"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 rounded-full active:scale-[0.98] transition-all cursor-pointer shadow-sm shrink-0"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse shrink-0" />
+              <span>Demo Mode</span>
+            </button>
+
             {/* Tactile Theme Toggle */}
             <button
               type="button"
@@ -1880,6 +2145,235 @@ export default function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Feature 2: Floating Animated Peer Match Request Toast */}
+      {liveMatchToast && (
+        <aside
+          aria-label="Live Corridor Match Notification"
+          className="fixed bottom-4 sm:bottom-6 right-3 left-3 sm:left-auto sm:right-6 z-[10060] sm:max-w-md bg-white/95 dark:bg-[#121215]/95 backdrop-blur-xl border border-emerald-500/60 dark:border-emerald-500/70 shadow-2xl shadow-emerald-500/20 rounded-2xl p-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+        >
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 font-mono">
+                Live Corridor Match Found
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLiveMatchToast(null)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 transition-colors p-0.5 rounded-md cursor-pointer"
+              title="Dismiss Notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+              {liveMatchToast.studentName?.charAt(0) || 'P'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                  {liveMatchToast.studentName}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 font-medium whitespace-nowrap">
+                  <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
+                  Verified Commuter
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
+                {liveMatchToast.academicTag} • {liveMatchToast.corridor} corridor
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
+            <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono flex items-center gap-1 truncate">
+              <Clock className="w-3 h-3 text-emerald-500 shrink-0" />
+              {liveMatchToast.time} ➔ KCC ITM
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleViewLiveMatchRoute(liveMatchToast)}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition-all cursor-pointer active:scale-95"
+              >
+                View Route
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAcceptLiveMatch(liveMatchToast)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-all shadow-sm shadow-emerald-500/20 cursor-pointer active:scale-95 flex items-center gap-1"
+              >
+                <Check className="w-3 h-3" />
+                <span>Accept</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* Feature 3: Hackathon Architecture & Tech Stack Modal */}
+      {showTechStackModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative z-[10000] bg-white/95 dark:bg-[#121215]/95 backdrop-blur-xl border border-slate-200/80 dark:border-zinc-800 rounded-2xl p-5 sm:p-7 w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl space-y-5 text-slate-900 dark:text-white">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200/80 dark:border-zinc-800/80 pb-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                  CR
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                      CampusRide Architecture
+                    </h3>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      HACKATHON BUILD
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                    Autonomous Student Carpooling & Route Optimization Engine for KCC ITM
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTechStackModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+                title="Close Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Architecture Pipeline Flow */}
+            <div className="bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/70 dark:border-zinc-800/70 rounded-xl p-3 sm:p-4 space-y-2">
+              <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider block font-mono">
+                System Workflow Pipeline:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/80 flex flex-col justify-between">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">01. AUTH</span>
+                  <span className="font-semibold text-slate-900 dark:text-white mt-1">@college.edu.in</span>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">Campus domain lock & student cues</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/80 flex flex-col justify-between">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">02. RADAR</span>
+                  <span className="font-semibold text-slate-900 dark:text-white mt-1">Corridor Scan</span>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">GPS proximity & hub quick-filters</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/80 flex flex-col justify-between">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">03. AUTOML</span>
+                  <span className="font-semibold text-slate-900 dark:text-white mt-1">Hybrid Dijkstra</span>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">Lal Kuan bottleneck evasion</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700/80 flex flex-col justify-between">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">04. DISPATCH</span>
+                  <span className="font-semibold text-slate-900 dark:text-white mt-1">Live Carpool</span>
+                  <span className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">Real-time seat reservations</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Core Tech Stack 6-Card Grid */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider block font-mono">
+                Core Technologies & Services:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-start gap-2.5 shadow-sm">
+                  <Server className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-white block">FastAPI Backend</span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-0.5">
+                      Async REST endpoints, Pydantic v2 validation, safe error normalization, and 12/12 integration test coverage.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-start gap-2.5 shadow-sm">
+                  <Cpu className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-white block">React 18 + Vite Frontend</span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-0.5">
+                      Tailwind CSS styling, tactile Light/Dark switch, 375px–430px mobile responsiveness, and sub-second compilation.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-start gap-2.5 shadow-sm">
+                  <Compass className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-white block">Leaflet + OpenStreetMap</span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-0.5">
+                      Zero-API-key open-source mapping tiles, live geolocation fallback, and Knowledge Park II campus terminal anchoring.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-start gap-2.5 shadow-sm">
+                  <Sparkles className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-white block">AutoML Route Predictor</span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-0.5">
+                      Scikit-learn / XGBoost model bundle (`AutoML/kcc_route_bundle`) calculating dynamic ETAs, congestion scores, and detour penalties.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-start gap-2.5 shadow-sm">
+                  <Database className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-white block">Supabase + SQLite</span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-0.5">
+                      Cloud PostgreSQL via Supabase with automatic SQLite local fallback, persistent saved corridors, and booking records.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 flex items-start gap-2.5 shadow-sm">
+                  <Layers className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 dark:text-white block">Render Cloud Deployment</span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block mt-0.5">
+                      Continuous delivery on Render with exportable trip CSV telemetry loop (`/admin/export-trips`) for model retraining.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-2 pt-3 border-t border-slate-200/80 dark:border-zinc-800/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTechStackModal(false);
+                  handleActivateDemoMode();
+                }}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-bold transition-all text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                <span>Load Live Demo Preset</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowTechStackModal(false)}
+                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 transition-all text-xs active:scale-[0.98] cursor-pointer flex items-center justify-center"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
